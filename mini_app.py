@@ -696,13 +696,19 @@ HTML_TEMPLATE = """
         }
 
         h1 {
-            font-size: 36px;
+            font-size: 48px;
             font-weight: 900;
             margin-bottom: 8px;
             color: white;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 40px rgba(255,255,255,0.5);
-            letter-spacing: -0.5px;
+            text-shadow:
+                0 0 10px rgba(255,255,255,0.8),
+                0 0 20px rgba(102, 126, 234, 0.8),
+                0 0 40px rgba(102, 126, 234, 0.6),
+                0 0 80px rgba(102, 126, 234, 0.4),
+                0 4px 20px rgba(0,0,0,0.3);
+            letter-spacing: 4px;
             animation: float 3s ease-in-out infinite;
+            text-transform: uppercase;
         }
 
         .subtitle {
@@ -1261,8 +1267,8 @@ HTML_TEMPLATE = """
 </head>
 <body>
     <div class="header">
-        <h1>🛍 Наш магазин</h1>
-        <p class="subtitle">Выберите товары и добавьте в корзину</p>
+        <h1>⚡ NIMBLI</h1>
+        <p class="subtitle">Спортивная экипировка премиум-класса</p>
     </div>
 
     <div class="products-grid" id="productsGrid"></div>
