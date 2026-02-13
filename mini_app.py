@@ -436,17 +436,17 @@ async def cmd_start(message: types.Message):
         keyboard=[
             [
                 KeyboardButton(
-                    text="📂 Open",
+                    text="🛍 Каталог",
                     web_app=WebAppInfo(url=WEBAPP_URL),
                 )
             ]
         ],
         resize_keyboard=True,
-        persistent=True,
+        is_persistent=True,
     )
     await message.answer(
         "🎉 <b>Добро пожаловать в NIMBLI!</b>\n\n"
-        "Кнопка Open всегда внизу экрана!",
+        "Нажми кнопку <b>🛍 Каталог</b> внизу экрана!",
         reply_markup=keyboard,
         parse_mode="HTML",
     )
