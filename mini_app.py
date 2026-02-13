@@ -571,8 +571,10 @@ async def handle_document(message: types.Message):
 @dp.message(F.web_app_data)
 async def handle_web_app_data(message: types.Message):
     """Обрабатывает данные из Mini App (консультация)."""
+    logger.info(f"🎯 handle_web_app_data вызван! Данные: {message.web_app_data.data[:200]}")
     try:
         data = json.loads(message.web_app_data.data)
+        logger.info(f"📦 Распарсенные данные: {data}")
         action = data.get("action", "order")
         items = data.get("items", [])
         total = data.get("total", 0)
@@ -1808,12 +1810,15 @@ async def handle_webhook(request: web.Request) -> web.Response:
     """Обработчик webhook от Telegram."""
     try:
         update_data = await request.json()
+        logger.info(f"📥 Получен webhook update: {json.dumps(update_data, ensure_ascii=False)[:500]}")
         from aiogram.types import Update
         update = Update(**update_data)
         await dp.feed_update(bot, update)
         return web.Response(text="OK")
     except Exception as e:
         logger.error(f"Ошибка обработки webhook: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return web.Response(status=500, text=str(e))
 
 
