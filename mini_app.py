@@ -157,6 +157,7 @@ def start_serveo(port):
 import asyncio
 import json
 import logging
+from urllib.parse import quote
 from aiohttp import web
 
 from aiogram import Bot, Dispatcher, types, F
@@ -580,7 +581,16 @@ async def handle_web_app_data(message: types.Message):
             await message.answer("❌ Вы не выбрали ни одного интересного товара!")
             return
 
-        # Формируем красивое сообщение с интересными товарами
+        # Формируем список товаров для сообщения менеджеру
+        products_list = ""
+        for item in items:
+            products_list += f"• {item['name']} — {item['price']} ₽\n"
+
+        # Формируем текст для предзаполнения в личке
+        prefilled_text = f"Здравствуйте, подскажите о наличии товара:\n\n{products_list}\n💰 Общая стоимость: {total} ₽"
+        encoded_text = quote(prefilled_text)
+
+        # Показываем сообщение пользователю с выбором менеджера
         message_text = "⭐ <b>Вас заинтересовали следующие товары:</b>\n\n"
 
         for item in items:
@@ -591,16 +601,18 @@ async def handle_web_app_data(message: types.Message):
 
         message_text += f"📊 <b>Общая стоимость: {total} ₽</b>\n\n"
         message_text += (
-            "💬 <b>Для консультации и оформления заказа</b>\n"
-            "напишите нашему менеджеру:\n"
-            "👉 @GussionHovo"
+            "💬 <b>Выберите менеджера для консультации:</b>"
         )
 
-        # Кнопка для связи с менеджером
+        # Кнопки для связи с менеджерами (с предзаполненным текстом)
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
             [types.InlineKeyboardButton(
-                text="💬 Написать менеджеру",
-                url="https://t.me/GussionHovo"
+                text="👤 @AlexeyBakaev",
+                url=f"https://t.me/AlexeyBakaev?text={encoded_text}"
+            )],
+            [types.InlineKeyboardButton(
+                text="👤 @musyanya",
+                url=f"https://t.me/musyanya?text={encoded_text}"
             )]
         ])
 
