@@ -311,7 +311,8 @@ def load_products_from_excel(file_path=None):
 
         from openpyxl import load_workbook
 
-        wb = load_workbook(file_path)
+        # data_only=True заставляет читать ЗНАЧЕНИЯ формул, а не сами формулы
+        wb = load_workbook(file_path, data_only=True)
         ws = wb.active
 
         products = []
