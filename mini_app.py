@@ -668,10 +668,10 @@ HTML_TEMPLATE = """
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
+            background: linear-gradient(-45deg, #FFD93D, #6BCF7F, #4D96FF, #FFA5E4, #A8DADC);
             background-size: 400% 400%;
             animation: gradientShift 15s ease infinite;
-            color: var(--tg-theme-text-color, #212529);
+            color: #1a1a1a;
             padding: 20px;
             padding-bottom: 100px;
             min-height: 100vh;
@@ -686,7 +686,7 @@ HTML_TEMPLATE = """
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(100px);
             pointer-events: none;
             z-index: 0;
@@ -701,27 +701,27 @@ HTML_TEMPLATE = """
         }
 
         h1 {
-            font-size: 48px;
+            font-size: 52px;
             font-weight: 900;
             margin-bottom: 8px;
-            color: white;
-            text-shadow:
-                0 0 10px rgba(255,255,255,0.8),
-                0 0 20px rgba(102, 126, 234, 0.8),
-                0 0 40px rgba(102, 126, 234, 0.6),
-                0 0 80px rgba(102, 126, 234, 0.4),
-                0 4px 20px rgba(0,0,0,0.3);
-            letter-spacing: 4px;
+            background: linear-gradient(135deg, #FF6B35, #FFD93D, #6BCF7F);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 4px 20px rgba(255,215,0,0.3);
+            filter: drop-shadow(0 0 20px rgba(255,215,0,0.4));
+            letter-spacing: 5px;
             animation: float 3s ease-in-out infinite;
             text-transform: uppercase;
         }
 
         .subtitle {
-            color: rgba(255, 255, 255, 0.9);
+            color: rgba(30, 30, 30, 0.85);
             margin-bottom: 0;
-            font-size: 15px;
-            font-weight: 500;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            font-size: 16px;
+            font-weight: 600;
+            text-shadow: 0 2px 10px rgba(255,255,255,0.5);
+            letter-spacing: 2px;
         }
 
         .products-grid {
@@ -865,8 +865,8 @@ HTML_TEMPLATE = """
             font-weight: 700;
             font-size: 15px;
             margin-bottom: 6px;
-            color: #fff;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            color: #2d2d2d;
+            text-shadow: 0 1px 3px rgba(255,255,255,0.5);
             line-height: 1.4;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -875,10 +875,13 @@ HTML_TEMPLATE = """
         }
 
         .product-price {
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 900;
-            color: #fff;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3), 0 0 20px rgba(102, 126, 234, 0.5);
+            background: linear-gradient(135deg, #FF6B35, #FFD93D);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 2px 4px rgba(255,107,53,0.3));
             margin-bottom: 8px;
             letter-spacing: -0.5px;
         }
@@ -955,15 +958,18 @@ HTML_TEMPLATE = """
             margin-bottom: 14px;
             font-size: 16px;
             font-weight: 700;
-            color: #fff;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            color: #2d2d2d;
+            text-shadow: 0 1px 3px rgba(255,255,255,0.5);
         }
 
         .cart-total {
             font-size: 26px;
             font-weight: 900;
-            color: #fff;
-            text-shadow: 0 2px 15px rgba(0,0,0,0.4), 0 0 30px rgba(102, 126, 234, 0.6);
+            background: linear-gradient(135deg, #FF6B35, #FFD93D);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 2px 4px rgba(255,107,53,0.3));
         }
 
         .order-btn {
@@ -971,12 +977,12 @@ HTML_TEMPLATE = """
             padding: 18px;
             border-radius: 16px;
             border: none;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #FF6B35 0%, #FFD93D 100%);
             color: white;
             font-size: 18px;
             font-weight: 800;
             cursor: pointer;
-            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
+            box-shadow: 0 8px 24px rgba(255,107,53,0.4);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             letter-spacing: 1px;
             text-transform: uppercase;
@@ -1001,7 +1007,7 @@ HTML_TEMPLATE = """
 
         .order-btn:hover {
             transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.6);
+            box-shadow: 0 12px 32px rgba(255,107,53,0.5);
         }
 
         .order-btn:active {
@@ -1356,7 +1362,7 @@ HTML_TEMPLATE = """
 
     <div class="header">
         <h1>⚡ NIMBLI</h1>
-        <p class="subtitle">Спортивная экипировка премиум-класса</p>
+        <p class="subtitle">Твой стиль • Твоя игра • Твоя победа</p>
     </div>
 
     <div class="products-grid" id="productsGrid"></div>
