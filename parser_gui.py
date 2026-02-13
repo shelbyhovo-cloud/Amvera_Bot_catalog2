@@ -397,13 +397,14 @@ def parse_tradeinn_product(url, script_dir, product_id):
             except:
                 pass
 
-        # Скачиваем фотки
+        # Скачиваем только ПЕРВУЮ фотку (экономим место и трафик)
         images_dir = script_dir / "images"
         images_dir.mkdir(exist_ok=True)
 
         local_images = []
-        for img_url in image_urls:
-            local_path = download_image(img_url, images_dir, product_id)
+        if image_urls:
+            # Берем только первую фотографию
+            local_path = download_image(image_urls[0], images_dir, product_id)
             if local_path:
                 local_images.append(local_path)
 
@@ -505,13 +506,14 @@ def parse_generic_product(url, script_dir, product_id):
             if img.startswith('http'):
                 image_urls.append(img)
 
-        # Скачиваем фотки
+        # Скачиваем только ПЕРВУЮ фотку (экономим место и трафик)
         images_dir = script_dir / "images"
         images_dir.mkdir(exist_ok=True)
 
         local_images = []
-        for img_url in image_urls:
-            local_path = download_image(img_url, images_dir, product_id)
+        if image_urls:
+            # Берем только первую фотографию
+            local_path = download_image(image_urls[0], images_dir, product_id)
             if local_path:
                 local_images.append(local_path)
 

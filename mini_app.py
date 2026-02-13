@@ -1202,9 +1202,6 @@ HTML_TEMPLATE = """
             <button class="modal-close" onclick="closeProductModal()">×</button>
             <div class="modal-image-container">
                 <img class="modal-image" id="modalImage" src="" alt="">
-                <button class="gallery-nav gallery-nav-prev" id="galleryPrev" onclick="changeModalImage(-1)" style="display: none;">‹</button>
-                <button class="gallery-nav gallery-nav-next" id="galleryNext" onclick="changeModalImage(1)" style="display: none;">›</button>
-                <div class="gallery-counter" id="galleryCounter" style="display: none;">1 / 1</div>
             </div>
             <div class="modal-body">
                 <h2 class="modal-title" id="modalTitle"></h2>
@@ -1236,7 +1233,6 @@ HTML_TEMPLATE = """
         let cart = {};  // Теперь это список интересных товаров
         let products = [];
         let currentProduct = null;  // Текущий товар в модальном окне
-        let currentImageIndex = 0;  // Текущий индекс фотографии в галерее
 
         // Загружаем товары с сервера
         fetch('/api/products')
@@ -1246,34 +1242,10 @@ HTML_TEMPLATE = """
                 renderProducts();
             });
 
-        // Переключение фотографий в галерее
-        function changeModalImage(direction) {
-            if (!currentProduct || !currentProduct.images || currentProduct.images.length <= 1) return;
-
-            currentImageIndex += direction;
-
-            // Циклическое переключение
-            if (currentImageIndex < 0) {
-                currentImageIndex = currentProduct.images.length - 1;
-            } else if (currentImageIndex >= currentProduct.images.length) {
-                currentImageIndex = 0;
-            }
-
-            const modalImage = document.getElementById('modalImage');
-            const galleryCounter = document.getElementById('galleryCounter');
-
-            modalImage.src = currentProduct.images[currentImageIndex];
-            galleryCounter.textContent = `${currentImageIndex + 1} / ${currentProduct.images.length}`;
-
-            tg.HapticFeedback.impactOccurred('light');
-        }
-
         // Открытие модального окна
         function openProductModal(productId) {
             currentProduct = products.find(p => p.id === productId);
             if (!currentProduct) return;
-
-            currentImageIndex = 0;  // Сбрасываем на первую фотографию
 
             const modal = document.getElementById('productModal');
             const modalImage = document.getElementById('modalImage');
@@ -1281,34 +1253,15 @@ HTML_TEMPLATE = """
             const modalDescription = document.getElementById('modalDescription');
             const modalPrice = document.getElementById('modalPrice');
             const modalAddBtn = document.getElementById('modalAddBtn');
-            const galleryPrev = document.getElementById('galleryPrev');
-            const galleryNext = document.getElementById('galleryNext');
-            const galleryCounter = document.getElementById('galleryCounter');
             const sizesSection = document.getElementById('sizesSection');
             const sizesGrid = document.getElementById('sizesGrid');
 
-            // Устанавливаем изображение
-            const images = currentProduct.images || [currentProduct.image];
-            if (images[0] && images[0].startsWith('/images/')) {
-                modalImage.src = images[0];
+            // Устанавливаем изображение (только первое)
+            if (currentProduct.image && currentProduct.image.startsWith('/images/')) {
+                modalImage.src = currentProduct.image;
                 modalImage.style.display = 'block';
-
-                // Показываем кнопки галереи, если фото больше одной
-                if (images.length > 1) {
-                    galleryPrev.style.display = 'flex';
-                    galleryNext.style.display = 'flex';
-                    galleryCounter.style.display = 'block';
-                    galleryCounter.textContent = `1 / ${images.length}`;
-                } else {
-                    galleryPrev.style.display = 'none';
-                    galleryNext.style.display = 'none';
-                    galleryCounter.style.display = 'none';
-                }
             } else {
                 modalImage.style.display = 'none';
-                galleryPrev.style.display = 'none';
-                galleryNext.style.display = 'none';
-                galleryCounter.style.display = 'none';
             }
 
             modalTitle.textContent = currentProduct.name;
