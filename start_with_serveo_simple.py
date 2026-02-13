@@ -1,0 +1,48 @@
+"""
+ПРОСТОЙ СПОСОБ - Запуск с Serveo вручную
+Этот скрипт просто показывает инструкции
+"""
+import sys
+import io
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+
+print("=" * 70)
+print("🌐 ЗАПУСК MINI APP С SERVEO - ПРОСТОЙ СПОСОБ")
+print("=" * 70)
+print()
+print("📝 ШАГ 1: Запусти Serveo туннель")
+print("   Открой НОВЫЙ терминал и выполни:")
+print()
+print("   ssh -R 80:localhost:8080 serveo.net")
+print()
+print("   Ты увидишь что-то вроде:")
+print("   Forwarding HTTP traffic from https://abc123.serveo.net")
+print()
+print("=" * 70)
+print("📝 ШАГ 2: Скопируй URL и настрой бота")
+print()
+print("   1. Скопируй URL (например: https://abc123.serveo.net)")
+print("   2. Открой файл: mini_app.py")
+print("   3. Найди строки (около строки 253-254):")
+print()
+print('      MODE = "auto"')
+print('      MANUAL_WEBAPP_URL = "https://ВАШ_URL.ngrok-free.app"')
+print()
+print("   4. Измени на:")
+print()
+print('      MODE = "manual"')
+print('      MANUAL_WEBAPP_URL = "https://твой_url.serveo.net"')
+print()
+print("   5. Сохрани файл")
+print()
+print("=" * 70)
+print("📝 ШАГ 3: Запусти бота")
+print()
+print("   python mini_app.py")
+print()
+print("=" * 70)
+print("✅ Готово! Бот будет работать пока открыт терминал с Serveo")
+print("=" * 70)
+print()
+input("Нажми Enter чтобы закрыть...")

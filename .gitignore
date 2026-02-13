@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Ngrok (больше не используется)
+ngrok_bin/
+
+# Локальные файлы
+*.log
+.env
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Временные файлы
+*.tmp
+*.bak
