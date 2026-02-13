@@ -979,11 +979,8 @@ HTML_TEMPLATE = """
         .product-price {
             font-size: 24px;
             font-weight: 900;
-            background: linear-gradient(135deg, #FF6B35, #FFD93D);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            filter: drop-shadow(0 2px 4px rgba(255,107,53,0.3));
+            color: white;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.3);
             margin-bottom: 8px;
             letter-spacing: -0.5px;
         }
@@ -1156,7 +1153,7 @@ HTML_TEMPLATE = """
         }
 
         .modal-content {
-            background: var(--tg-theme-bg-color, #ffffff);
+            background: #ffffff;
             border-radius: 20px;
             max-width: 500px;
             width: 100%;
@@ -1309,7 +1306,7 @@ HTML_TEMPLATE = """
             font-size: 24px;
             font-weight: 800;
             margin-bottom: 12px;
-            color: var(--tg-theme-text-color, #212529);
+            color: #212529;
             line-height: 1.3;
         }
 
@@ -1326,7 +1323,7 @@ HTML_TEMPLATE = """
         .modal-price-label {
             font-size: 14px;
             font-weight: 600;
-            color: var(--tg-theme-hint-color, #6c757d);
+            color: #6c757d;
         }
 
         .modal-price {
@@ -1346,7 +1343,7 @@ HTML_TEMPLATE = """
             font-size: 16px;
             font-weight: 700;
             margin-bottom: 12px;
-            color: var(--tg-theme-text-color, #212529);
+            color: #212529;
         }
 
         .modal-info-item {
@@ -1362,13 +1359,13 @@ HTML_TEMPLATE = """
 
         .modal-info-label {
             font-size: 14px;
-            color: var(--tg-theme-hint-color, #6c757d);
+            color: #6c757d;
         }
 
         .modal-info-value {
             font-size: 14px;
             font-weight: 600;
-            color: var(--tg-theme-text-color, #212529);
+            color: #212529;
         }
 
         .modal-actions {
