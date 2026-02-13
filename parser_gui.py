@@ -308,52 +308,79 @@ def parse_tradeinn_product(url, script_dir, product_id):
         # Парсим размеры (для обуви, одежды)
         sizes = []
 
-        # МЕТОД 1: Ищем размеры в select элементе
-        size_select_match = re.findall(r'<option[^>]*value="size:([^"]+)"[^>]*>([^<]+)</option>', html, re.IGNORECASE)
-        if size_select_match:
-            for size_value, size_label in size_select_match:
-                size_clean = size_label.strip()
-                if size_clean and size_clean.lower() not in ['выберите размер', 'choose size', 'select']:
-                    sizes.append(size_clean)
+        # МЕТОД 1: JSON-LD структурированные данные (самый надежный для TradeInn!)
+        json_ld_pattern = r'<script type="application/ld\+json">(.*?)</script>'
+        json_ld_matches = re.findall(json_ld_pattern, html, re.DOTALL)
 
-        # МЕТОД 2: Ищем размеры в data-атрибутах
+        for json_str in json_ld_matches:
+            try:
+                import json
+                data = json.loads(json_str)
+
+                # Ищем варианты товара (hasVariant)
+                if isinstance(data, dict) and data.get('@type') == 'Product':
+                    variants = data.get('hasVariant', [])
+                    if variants:
+                        for variant in variants:
+                            # Извлекаем размер из имени варианта
+                            variant_name = variant.get('name', '')
+                            # Пример: "EU 42 1/2" или "EU 44"
+                            size_match = re.search(r'EU\s+(\d+(?:\s*1/2)?)', variant_name)
+                            if size_match:
+                                size = size_match.group(1).strip()
+                                if size not in sizes:
+                                    sizes.append(size)
+            except:
+                pass
+
+        # МЕТОД 2: Ищем размеры в select элементе
+        if not sizes:
+            size_select_match = re.findall(r'<option[^>]*value="size:([^"]+)"[^>]*>([^<]+)</option>', html, re.IGNORECASE)
+            if size_select_match:
+                for size_value, size_label in size_select_match:
+                    size_clean = size_label.strip()
+                    if size_clean and size_clean.lower() not in ['выберите размер', 'choose size', 'select']:
+                        sizes.append(size_clean)
+
+        # МЕТОД 3: Ищем размеры в data-атрибутах
         if not sizes:
             size_data_match = re.findall(r'data-size="([^"]+)"', html, re.IGNORECASE)
             if size_data_match:
                 for size in size_data_match:
                     size_clean = size.strip()
-                    if size_clean and len(size_clean) <= 10:  # Фильтруем слишком длинные строки
+                    if size_clean and len(size_clean) <= 10:
                         sizes.append(size_clean)
 
-        # МЕТОД 3: Ищем размеры в JSON данных
+        # МЕТОД 4: Ищем текстовые паттерны "EU 42", "Size 42" (РАБОТАЕТ ДЛЯ TRADEINN!)
         if not sizes:
-            sizes_json_match = re.search(r'"sizes"\s*:\s*\[([^\]]+)\]', html)
-            if sizes_json_match:
-                try:
-                    import json
-                    sizes_text = '[' + sizes_json_match.group(1) + ']'
-                    sizes_data = json.loads(sizes_text)
-                    for size in sizes_data:
-                        if isinstance(size, (str, int, float)):
-                            sizes.append(str(size))
-                except:
-                    pass
+            text_patterns = [
+                r'(?:EU|Size|Размер)\s+(\d{2}(?:\s*1/2)?)',  # EU 42, EU 42 1/2
+                r'size["\']?\s*:\s*["\'](\d{2}(?:\s*1/2)?)["\']',  # JSON: "size":"42"
+            ]
 
-        # МЕТОД 4: Ищем размеры в списке доступности (для обуви)
-        if not sizes and ('обувь' in name.lower() or 'shoe' in name.lower() or 'boot' in name.lower() or 'sneaker' in name.lower()):
-            # Ищем размеры в элементах списка
-            size_list_match = re.findall(r'<li[^>]*data-value="(\d{2}(?:[.,]\d)?)"', html, re.IGNORECASE)
-            if size_list_match:
-                for size in size_list_match:
-                    if 35 <= float(size.replace(',', '.')) <= 50 and size not in sizes:
-                        sizes.append(size)
+            for pattern in text_patterns:
+                matches = re.findall(pattern, html, re.IGNORECASE)
+                if matches:
+                    for match in set(matches):
+                        if match not in sizes:
+                            sizes.append(match)
 
         # Убираем дубликаты и сортируем
         if sizes:
             sizes = list(dict.fromkeys(sizes))  # Убираем дубликаты, сохраняя порядок
-            # Пытаемся отсортировать численно
+            # Пытаемся отсортировать численно (учитываем дроби типа "42 1/2")
+            def parse_size(s):
+                # Преобразуем "42 1/2" в 42.5
+                if '1/2' in s:
+                    base = float(s.replace('1/2', '').strip())
+                    return base + 0.5
+                try:
+                    return float(s.replace(',', '.'))
+                except:
+                    return 999
+
             try:
-                sizes = sorted(set(sizes), key=lambda x: float(x.replace(',', '.')) if x.replace(',', '.').replace('.', '').isdigit() else 999)
+                sizes = sorted(set(sizes), key=parse_size)
             except:
                 pass
 
