@@ -241,42 +241,36 @@ PRODUCTS_DEFAULT = [
     {
         "id": 1,
         "name": "Футболка Premium",
-        "description": "100% хлопок, удобная посадка",
         "price": 1500,
         "image": "👕",
     },
     {
         "id": 2,
         "name": "Кроссовки Sport",
-        "description": "Лёгкие беговые кроссовки",
         "price": 4500,
         "image": "👟",
     },
     {
         "id": 3,
         "name": "Рюкзак Urban",
-        "description": "Городской рюкзак 20L с USB",
         "price": 2800,
         "image": "🎒",
     },
     {
         "id": 4,
         "name": "Наушники Pro",
-        "description": "Беспроводные с шумоподавлением",
         "price": 6000,
         "image": "🎧",
     },
     {
         "id": 5,
         "name": "Смарт-часы",
-        "description": "Фитнес-трекер + уведомления",
         "price": 8500,
         "image": "⌚",
     },
     {
         "id": 6,
         "name": "Кепка Classic",
-        "description": "Бейсболка с логотипом",
         "price": 900,
         "image": "🧢",
     },
@@ -324,13 +318,21 @@ def load_products_from_excel(file_path=None):
 
         for row_num in range(2, ws.max_row + 1):
             name = ws.cell(row_num, 2).value          # B: Название
-            price = ws.cell(row_num, 3).value         # C: Цена
-            description = ws.cell(row_num, 4).value   # D: Описание
-            category = ws.cell(row_num, 5).value      # E: Группа
-            subcategory = ws.cell(row_num, 6).value   # F: Подгруппа
-            image_urls = ws.cell(row_num, 7).value    # G: URL фото
-            local_images = ws.cell(row_num, 8).value  # H: Локальное фото
-            sizes = ws.cell(row_num, 9).value         # I: Размеры
+            category = ws.cell(row_num, 4).value      # D: Группа
+            subcategory = ws.cell(row_num, 5).value       # E: Подгруппа
+            product_category = ws.cell(row_num, 6).value  # F: Категория товара
+            image_urls = ws.cell(row_num, 7).value        # G: URL фото
+            local_images = ws.cell(row_num, 8).value      # H: Локальное фото
+            sizes = ws.cell(row_num, 9).value             # I: Размеры
+
+            # Берём ТОЛЬКО "Цена с дост. (₽)" из столбца P (может быть формула или значение)
+            price_with_delivery = ws.cell(row_num, 16).value  # P: Цена с дост. (₽)
+
+            # Используем только цену с доставкой
+            if price_with_delivery and isinstance(price_with_delivery, (int, float)) and price_with_delivery > 0:
+                price = int(price_with_delivery)
+            else:
+                price = None
 
             # Пропускаем строки без данных
             if not name or not price:
@@ -362,13 +364,13 @@ def load_products_from_excel(file_path=None):
             products.append({
                 "id": row_num - 1,
                 "name": name,
-                "description": description or "",
                 "price": int(price) if price else 0,
                 "image": image_to_use,
                 "images": all_images if all_images else [image_to_use],  # Массив всех фото
                 "sizes": sizes_array,  # Массив размеров
                 "category": category or "",
                 "subcategory": subcategory or "",
+                "product_category": product_category or "",  # Категория товара для управления ценами
             })
 
         if products:
@@ -535,8 +537,7 @@ async def handle_web_app_data(message: types.Message):
         for item in items:
             message_text += (
                 f"<b>{item['name']}</b>\n"
-                f"💰 Цена: {item['price']} ₽\n"
-                f"📝 {item.get('description', '')}\n\n"
+                f"💰 Цена: {item['price']} ₽\n\n"
             )
 
         message_text += f"📊 <b>Общая стоимость: {total} ₽</b>\n\n"
@@ -747,17 +748,6 @@ HTML_TEMPLATE = """
             margin-bottom: 6px;
             color: var(--tg-theme-text-color, #212529);
             line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .product-description {
-            font-size: 12px;
-            color: var(--tg-theme-hint-color, #6c757d);
-            margin-bottom: 10px;
-            line-height: 1.5;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -1078,13 +1068,6 @@ HTML_TEMPLATE = """
             line-height: 1.3;
         }
 
-        .modal-description {
-            font-size: 15px;
-            color: var(--tg-theme-hint-color, #6c757d);
-            margin-bottom: 20px;
-            line-height: 1.6;
-        }
-
         .modal-price-section {
             display: flex;
             justify-content: space-between;
@@ -1205,7 +1188,6 @@ HTML_TEMPLATE = """
             </div>
             <div class="modal-body">
                 <h2 class="modal-title" id="modalTitle"></h2>
-                <p class="modal-description" id="modalDescription"></p>
 
                 <div class="modal-price-section">
                     <span class="modal-price-label">Цена</span>
@@ -1250,7 +1232,6 @@ HTML_TEMPLATE = """
             const modal = document.getElementById('productModal');
             const modalImage = document.getElementById('modalImage');
             const modalTitle = document.getElementById('modalTitle');
-            const modalDescription = document.getElementById('modalDescription');
             const modalPrice = document.getElementById('modalPrice');
             const modalAddBtn = document.getElementById('modalAddBtn');
             const sizesSection = document.getElementById('sizesSection');
@@ -1265,7 +1246,6 @@ HTML_TEMPLATE = """
             }
 
             modalTitle.textContent = currentProduct.name;
-            modalDescription.textContent = currentProduct.description;
             modalPrice.textContent = currentProduct.price + ' ₽';
 
             // Показываем размеры, если они есть
@@ -1345,7 +1325,6 @@ HTML_TEMPLATE = """
                     ${quantity > 0 ? '<div class="product-badge">⭐ Интересно</div>' : ''}
                     <div class="product-image">${imageHtml}</div>
                     <div class="product-name">${product.name}</div>
-                    <div class="product-description">${product.description}</div>
                     <div class="product-price">${product.price} ₽</div>
                 `;
 
@@ -1410,8 +1389,7 @@ HTML_TEMPLATE = """
                         name: product.name,
                         price: product.price,
                         quantity: quantity,
-                        image: product.image,
-                        description: product.description
+                        image: product.image
                     });
                     total += product.price * quantity;
                 }
