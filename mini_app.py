@@ -704,12 +704,11 @@ HTML_TEMPLATE = """
             font-size: 52px;
             font-weight: 900;
             margin-bottom: 8px;
-            background: linear-gradient(135deg, #FF6B35, #FFD93D, #6BCF7F);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 0 4px 20px rgba(255,215,0,0.3);
-            filter: drop-shadow(0 0 20px rgba(255,215,0,0.4));
+            color: white;
+            text-shadow:
+                0 2px 10px rgba(0,0,0,0.3),
+                0 4px 20px rgba(0,0,0,0.2),
+                0 0 40px rgba(255,215,0,0.3);
             letter-spacing: 5px;
             animation: float 3s ease-in-out infinite;
             text-transform: uppercase;
