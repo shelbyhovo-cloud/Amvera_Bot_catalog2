@@ -224,10 +224,10 @@ WEBAPP_PORT = 8080
 # Режим работы:
 # - "auto" = автоматический туннель через Serveo (бесплатно, без регистрации)
 # - "manual" = ручной режим, нужно указать свой URL ниже
-MODE = "auto"
+MODE = "manual"
 
 # Если MODE = "manual", вставь сюда свой HTTPS URL от Serveo/LocalTunnel/etc
-MANUAL_WEBAPP_URL = "https://your-url.serveo.net"
+MANUAL_WEBAPP_URL = "https://amvera-andrew-gurin94-run-test.amvera.io"
 
 # WEBAPP_URL будет установлен автоматически
 WEBAPP_URL = None
