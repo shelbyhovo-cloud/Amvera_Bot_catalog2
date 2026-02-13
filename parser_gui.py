@@ -329,6 +329,27 @@ def create_beautiful_template(file_path=None):
 # 🕷️ ПАРСИНГ (из update_products.py)
 # ═══════════════════════════════════════════════════════════
 
+def get_images_dir(script_dir):
+    """
+    Определяет путь к папке images в зависимости от окружения.
+
+    На Amvera (если существует /data/) → /data/images/
+    Локально → script_dir/images/
+    """
+    # Проверяем, запущены ли мы на Amvera (есть папка /data)
+    data_path = Path('/data')
+    if data_path.exists() and data_path.is_dir():
+        # На Amvera - используем постоянное хранилище
+        images_dir = data_path / 'images'
+        images_dir.mkdir(exist_ok=True)
+        return images_dir
+    else:
+        # Локально - используем папку рядом со скриптом
+        images_dir = script_dir / 'images'
+        images_dir.mkdir(exist_ok=True)
+        return images_dir
+
+
 def clean_product_name(name):
     """Убирает русские (кириллические) слова из названия товара.
 
@@ -582,8 +603,7 @@ def parse_tradeinn_product(url, script_dir, product_id):
                 pass
 
         # Скачиваем только ПЕРВУЮ фотку (экономим место и трафик)
-        images_dir = script_dir / "images"
-        images_dir.mkdir(exist_ok=True)
+        images_dir = get_images_dir(script_dir)
 
         local_images = []
         if image_urls:
@@ -713,8 +733,7 @@ def parse_generic_product(url, script_dir, product_id):
                 image_urls.append(img)
 
         # Скачиваем только ПЕРВУЮ фотку (экономим место и трафик)
-        images_dir = script_dir / "images"
-        images_dir.mkdir(exist_ok=True)
+        images_dir = get_images_dir(script_dir)
 
         local_images = []
         if image_urls:
@@ -1227,7 +1246,7 @@ class ParserApp:
                 self.update_status("❌ Excel файл не найден")
                 return
 
-            images_dir = self.script_dir / "images"
+            images_dir = get_images_dir(self.script_dir)
             if not images_dir.exists() or not any(images_dir.iterdir()):
                 messagebox.showwarning(
                     "Папка images пуста",

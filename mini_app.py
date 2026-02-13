@@ -278,6 +278,28 @@ PRODUCTS_DEFAULT = [
 
 PRODUCTS = []  # Будет загружено из Excel или использованы стандартные
 
+
+def get_images_dir():
+    """
+    Определяет путь к папке images в зависимости от окружения.
+
+    На Amvera (если существует /data/) → /data/images/
+    Локально → ./images/
+    """
+    data_path = Path('/data')
+    if data_path.exists() and data_path.is_dir():
+        # На Amvera - используем постоянное хранилище
+        images_dir = data_path / 'images'
+        images_dir.mkdir(exist_ok=True)
+        return images_dir
+    else:
+        # Локально - используем папку рядом со скриптом
+        script_dir = Path(__file__).parent
+        images_dir = script_dir / 'images'
+        images_dir.mkdir(exist_ok=True)
+        return images_dir
+
+
 def load_products_from_excel(file_path=None):
     """Загружает товары из Excel файла."""
     global PRODUCTS
@@ -618,58 +640,113 @@ HTML_TEMPLATE = """
             }
         }
 
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: linear-gradient(135deg, var(--tg-theme-bg-color, #f8f9fa) 0%, var(--tg-theme-secondary-bg-color, #e9ecef) 100%);
+            background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
             color: var(--tg-theme-text-color, #212529);
             padding: 20px;
             padding-bottom: 100px;
             min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(100px);
+            pointer-events: none;
+            z-index: 0;
         }
 
         .header {
             text-align: center;
             margin-bottom: 24px;
             animation: fadeInUp 0.6s ease-out;
+            position: relative;
+            z-index: 1;
         }
 
         h1 {
-            font-size: 32px;
-            font-weight: 800;
+            font-size: 36px;
+            font-weight: 900;
             margin-bottom: 8px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: white;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 40px rgba(255,255,255,0.5);
             letter-spacing: -0.5px;
+            animation: float 3s ease-in-out infinite;
         }
 
         .subtitle {
-            color: var(--tg-theme-hint-color, #6c757d);
+            color: rgba(255, 255, 255, 0.9);
             margin-bottom: 0;
             font-size: 15px;
             font-weight: 500;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
 
         .products-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-            gap: 16px;
+            gap: 20px;
             margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
         }
 
         .product-card {
-            background: var(--tg-theme-secondary-bg-color, #ffffff);
-            border-radius: 16px;
-            padding: 14px;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-radius: 20px;
+            padding: 16px;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 2px solid transparent;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
             position: relative;
             overflow: hidden;
             animation: fadeInUp 0.6s ease-out;
             animation-fill-mode: both;
+        }
+
+        .product-card:hover {
+            transform: translateY(-10px) scale(1.03);
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.3),
+                0 0 40px rgba(255, 255, 255, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            border-color: rgba(255, 255, 255, 0.6);
         }
 
         .product-card::before {
@@ -747,7 +824,8 @@ HTML_TEMPLATE = """
             font-weight: 700;
             font-size: 15px;
             margin-bottom: 6px;
-            color: var(--tg-theme-text-color, #212529);
+            color: #fff;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
             line-height: 1.4;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -756,13 +834,12 @@ HTML_TEMPLATE = """
         }
 
         .product-price {
-            font-size: 20px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-size: 22px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3), 0 0 20px rgba(102, 126, 234, 0.5);
             margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
 
         .product-quantity {
@@ -815,12 +892,14 @@ HTML_TEMPLATE = """
             bottom: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,1) 100%);
-            backdrop-filter: blur(20px);
-            padding: 16px 20px;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            padding: 20px;
+            box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.2);
             display: none;
-            border-top: 2px solid rgba(102, 126, 234, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.4);
+            z-index: 100;
         }
 
         .cart-footer.visible {
@@ -832,40 +911,56 @@ HTML_TEMPLATE = """
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--tg-theme-text-color, #212529);
+            margin-bottom: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
 
         .cart-total {
-            font-size: 24px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-size: 26px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 2px 15px rgba(0,0,0,0.4), 0 0 30px rgba(102, 126, 234, 0.6);
         }
 
         .order-btn {
             width: 100%;
-            padding: 16px;
-            border-radius: 14px;
+            padding: 18px;
+            border-radius: 16px;
             border: none;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            font-size: 17px;
-            font-weight: 700;
+            font-size: 18px;
+            font-weight: 800;
             cursor: pointer;
-            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
-            transition: all 0.3s ease;
-            letter-spacing: 0.5px;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 1px;
             text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .order-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .order-btn:hover::before {
+            left: 100%;
         }
 
         .order-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.6);
         }
 
         .order-btn:active {
@@ -1429,8 +1524,7 @@ def create_web_app() -> web.Application:
     app.router.add_get("/api/products", handle_products)
 
     # Раздаём статические файлы (фотографии товаров)
-    script_dir = Path(__file__).parent
-    images_dir = script_dir / "images"
+    images_dir = get_images_dir()
     if images_dir.exists():
         app.router.add_static("/images/", path=images_dir, name="images")
         logger.info(f"📁 Раздача изображений из: {images_dir}")
