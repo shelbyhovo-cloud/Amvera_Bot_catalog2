@@ -1653,17 +1653,31 @@ async def handle_products(request: web.Request) -> web.Response:
     return web.json_response(PRODUCTS)
 
 
+async def handle_webhook(request: web.Request) -> web.Response:
+    """Обработчик webhook от Telegram."""
+    try:
+        update_data = await request.json()
+        from aiogram.types import Update
+        update = Update(**update_data)
+        await dp.feed_update(bot, update)
+        return web.Response(text="OK")
+    except Exception as e:
+        logger.error(f"Ошибка обработки webhook: {e}")
+        return web.Response(status=500, text=str(e))
+
+
 def create_web_app() -> web.Application:
     """Создаёт веб-приложение aiohttp."""
     app = web.Application()
     app.router.add_get("/", handle_index)
     app.router.add_get("/api/products", handle_products)
+    app.router.add_post("/webhook", handle_webhook)  # Webhook endpoint
 
     # Раздаём статические файлы (фотографии товаров)
     images_dir = get_images_dir()
     if images_dir.exists():
         app.router.add_static("/images/", path=images_dir, name="images")
-        logger.info(f"📁 Раздача изображений из: {images_dir}")
+        logger.info(f"📁 Раздация изображений из: {images_dir}")
 
     return app
 
@@ -1764,8 +1778,20 @@ async def main():
     logger.info("🤖 Telegram бот запущен!")
     logger.info("💬 Напиши боту /start чтобы открыть магазин!\n")
 
+    # Определяем режим работы
+    use_webhook = WEBAPP_URL and ("amvera.io" in WEBAPP_URL or WEBAPP_URL.startswith("https://"))
+
     try:
-        await dp.start_polling(bot)
+        if use_webhook:
+            # Webhook mode для продакшена (Amvera и др.)
+            logger.info("🔗 Режим: WEBHOOK")
+            logger.info(f"📍 Webhook URL: {WEBAPP_URL}/webhook")
+            # Webhook уже установлен через API, просто ждем
+            await asyncio.Event().wait()  # Бесконечное ожидание
+        else:
+            # Polling mode для локальной разработки
+            logger.info("🔄 Режим: POLLING (локальная разработка)")
+            await dp.start_polling(bot)
     finally:
         # Останавливаем всё при выходе
         logger.info("Останавливаю сервер...")
