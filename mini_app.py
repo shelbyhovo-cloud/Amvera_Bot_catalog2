@@ -161,7 +161,7 @@ from aiohttp import web
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, ReplyKeyboardMarkup, KeyboardButton
 
 
 # ═══════════════════════════════════════════════════════════
@@ -432,19 +432,21 @@ dp = Dispatcher()
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     """Команда /start - показывает приветствие и кнопку магазина."""
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
             [
-                InlineKeyboardButton(
+                KeyboardButton(
                     text="📂 Open",
                     web_app=WebAppInfo(url=WEBAPP_URL),
                 )
             ]
-        ]
+        ],
+        resize_keyboard=True,
+        persistent=True,
     )
     await message.answer(
         "🎉 <b>Добро пожаловать в NIMBLI!</b>\n\n"
-        "Нажми кнопку ниже, чтобы открыть каталог товаров.",
+        "Кнопка Open всегда внизу экрана!",
         reply_markup=keyboard,
         parse_mode="HTML",
     )
@@ -721,6 +723,74 @@ HTML_TEMPLATE = """
             font-weight: 600;
             text-shadow: 0 2px 10px rgba(255,255,255,0.5);
             letter-spacing: 2px;
+        }
+
+        .search-container {
+            margin: 20px auto 24px;
+            max-width: 600px;
+            animation: fadeInUp 0.8s ease-out 0.3s both;
+        }
+
+        .search-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 18px;
+            font-size: 20px;
+            opacity: 0.6;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 16px 50px 16px 52px;
+            font-size: 16px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            box-shadow:
+                0 4px 20px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+            font-family: inherit;
+            color: #333;
+        }
+
+        .search-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow:
+                0 6px 30px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 1),
+                0 0 0 3px rgba(129, 212, 250, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .search-input::placeholder {
+            color: rgba(0, 0, 0, 0.4);
+        }
+
+        .clear-search {
+            position: absolute;
+            right: 18px;
+            font-size: 20px;
+            color: rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            z-index: 2;
+        }
+
+        .clear-search:hover {
+            color: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.05);
         }
 
         .products-grid {
@@ -1364,6 +1434,20 @@ HTML_TEMPLATE = """
         <p class="subtitle">Твой стиль • Твоя игра • Твоя победа</p>
     </div>
 
+    <div class="search-container">
+        <div class="search-wrapper">
+            <span class="search-icon">🔍</span>
+            <input
+                type="text"
+                id="searchInput"
+                class="search-input"
+                placeholder="Поиск товаров..."
+                autocomplete="off"
+            />
+            <span class="clear-search" id="clearSearch" style="display: none;">✕</span>
+        </div>
+    </div>
+
     <div class="products-grid" id="productsGrid"></div>
 
     <div class="cart-footer" id="cartFooter">
@@ -1434,6 +1518,23 @@ HTML_TEMPLATE = """
                 products = data;
                 renderProducts();
             });
+
+        // Поиск товаров
+        const searchInput = document.getElementById('searchInput');
+        const clearSearch = document.getElementById('clearSearch');
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value;
+            renderProducts(query);
+            clearSearch.style.display = query ? 'block' : 'none';
+        });
+
+        clearSearch.addEventListener('click', () => {
+            searchInput.value = '';
+            clearSearch.style.display = 'none';
+            renderProducts('');
+            searchInput.focus();
+        });
 
         // Открытие модального окна
         function openProductModal(productId) {
@@ -1509,11 +1610,30 @@ HTML_TEMPLATE = """
             }
         });
 
-        function renderProducts() {
+        function renderProducts(searchQuery = '') {
             const grid = document.getElementById('productsGrid');
             grid.innerHTML = '';
 
-            products.forEach(product => {
+            // Фильтруем товары по поисковому запросу
+            const filteredProducts = products.filter(product => {
+                if (!searchQuery) return true;
+                const query = searchQuery.toLowerCase();
+                return product.name.toLowerCase().includes(query);
+            });
+
+            // Если ничего не найдено
+            if (filteredProducts.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: rgba(0,0,0,0.5);">
+                        <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
+                        <div style="font-size: 18px; font-weight: 600;">Ничего не найдено</div>
+                        <div style="font-size: 14px; margin-top: 8px;">Попробуйте изменить запрос</div>
+                    </div>
+                `;
+                return;
+            }
+
+            filteredProducts.forEach(product => {
                 const card = document.createElement('div');
                 card.className = 'product-card';
                 if (cart[product.id]) {
