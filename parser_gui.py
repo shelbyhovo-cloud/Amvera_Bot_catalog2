@@ -175,8 +175,21 @@ def create_beautiful_template(file_path=None):
 # ═══════════════════════════════════════════════════════════
 
 def download_image(image_url, save_dir, product_id):
-    """Скачивает изображение и сохраняет локально."""
+    """Скачивает изображение и сохраняет локально (с проверкой существования)."""
     try:
+        # Генерируем имя файла заранее (используем hash URL для уникальности)
+        url_hash = hash(image_url) % 10000
+
+        # Пробуем найти существующий файл с таким хешем (любое расширение)
+        for ext in ['.jpg', '.png', '.webp', '.jpeg']:
+            filename = f"product_{product_id}_{url_hash}{ext}"
+            filepath = save_dir / filename
+
+            # Если файл уже существует - пропускаем скачивание
+            if filepath.exists():
+                return str(filepath.relative_to(save_dir.parent))
+
+        # Если файла нет - скачиваем
         response = requests.get(image_url, timeout=10, stream=True)
         response.raise_for_status()
 
@@ -191,7 +204,7 @@ def download_image(image_url, save_dir, product_id):
             ext = '.jpg'
 
         # Генерируем имя файла
-        filename = f"product_{product_id}_{hash(image_url) % 10000}{ext}"
+        filename = f"product_{product_id}_{url_hash}{ext}"
         filepath = save_dir / filename
 
         # Сохраняем файл
