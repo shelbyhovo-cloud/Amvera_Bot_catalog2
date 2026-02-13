@@ -227,7 +227,7 @@ WEBAPP_PORT = 8080
 MODE = "manual"
 
 # Если MODE = "manual", вставь сюда свой HTTPS URL от Serveo/LocalTunnel/etc
-MANUAL_WEBAPP_URL = "https://amvera-andrew-gurin94-run-test.amvera.io"
+MANUAL_WEBAPP_URL = "https://test-andrew-gurin94.amvera.io"
 
 # WEBAPP_URL будет установлен автоматически
 WEBAPP_URL = None
