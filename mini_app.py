@@ -1762,7 +1762,8 @@ HTML_TEMPLATE = """
             }
         }
 
-        document.getElementById('orderBtn').addEventListener('click', () => {
+        // Подготовка данных для отправки
+        function prepareConsultationData() {
             const items = [];
             let total = 0;
 
@@ -1780,15 +1781,31 @@ HTML_TEMPLATE = """
                 }
             }
 
-            const consultationData = {
+            return {
                 action: 'consultation',
                 items: items,
                 total: total
             };
+        }
 
-            // Отправляем данные боту для консультации
-            tg.sendData(JSON.stringify(consultationData));
-            tg.close();
+        // Обработчик MainButton
+        tg.MainButton.onClick(() => {
+            const data = prepareConsultationData();
+            tg.sendData(JSON.stringify(data));
+        });
+
+        // Кнопка консультации показывает MainButton
+        document.getElementById('orderBtn').addEventListener('click', () => {
+            const data = prepareConsultationData();
+
+            if (data.items.length === 0) {
+                tg.showAlert('Добавьте хотя бы один товар в интересное!');
+                return;
+            }
+
+            // Показываем MainButton для отправки
+            tg.MainButton.setText('✅ Отправить запрос');
+            tg.MainButton.show();
         });
     </script>
 </body>
