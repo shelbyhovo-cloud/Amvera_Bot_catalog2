@@ -218,6 +218,10 @@ def kill_process_on_port(port):
 # ═══════════════════════════════════════════════════════════
 
 BOT_TOKEN = "8529662300:AAHnb8e8Qh93INgnC_x3rkDc1QC20c3ulFM"
+
+# Админы (могут загружать каталог)
+ADMIN_USERNAMES = ["AlexeyBakaev", "musyanya", "GussionHovo"]
+
 WEBAPP_HOST = "0.0.0.0"
 WEBAPP_PORT = 8080
 
@@ -490,6 +494,21 @@ async def cmd_reload(message: types.Message):
 @dp.message(F.document)
 async def handle_document(message: types.Message):
     """Обрабатывает загрузку архивов с каталогом товаров."""
+    # Проверяем права админа
+    username = message.from_user.username
+    if username not in ADMIN_USERNAMES:
+        await message.answer(
+            "🚫 <b>Доступ запрещён!</b>\n\n"
+            "Загружать каталог могут только администраторы.\n"
+            "Обратитесь к @AlexeyBakaev, @musyanya или @GussionHovo",
+            parse_mode="HTML"
+        )
+        logger.warning(
+            f"⚠️ Попытка загрузки каталога от неавторизованного пользователя: "
+            f"@{username} ({message.from_user.full_name})"
+        )
+        return
+
     document = message.document
 
     # Проверяем расширение файла (только ZIP для простоты)
