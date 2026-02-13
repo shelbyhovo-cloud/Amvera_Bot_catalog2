@@ -571,10 +571,10 @@ async def handle_document(message: types.Message):
 @dp.message(F.web_app_data)
 async def handle_web_app_data(message: types.Message):
     """Обрабатывает данные из Mini App (консультация)."""
-    logger.info(f"🎯 handle_web_app_data вызван! Данные: {message.web_app_data.data[:200]}")
+    print(f"\n🎯 WEB_APP_DATA ПОЛУЧЕН! Данные: {message.web_app_data.data[:200]}\n", flush=True)
     try:
         data = json.loads(message.web_app_data.data)
-        logger.info(f"📦 Распарсенные данные: {data}")
+        print(f"📦 Распарсено: {data}\n", flush=True)
         action = data.get("action", "order")
         items = data.get("items", [])
         total = data.get("total", 0)
@@ -1810,15 +1810,15 @@ async def handle_webhook(request: web.Request) -> web.Response:
     """Обработчик webhook от Telegram."""
     try:
         update_data = await request.json()
-        logger.info(f"📥 Получен webhook update: {json.dumps(update_data, ensure_ascii=False)[:500]}")
+        print(f"\n📥 WEBHOOK: {json.dumps(update_data, ensure_ascii=False)[:500]}\n", flush=True)
         from aiogram.types import Update
         update = Update(**update_data)
         await dp.feed_update(bot, update)
         return web.Response(text="OK")
     except Exception as e:
-        logger.error(f"Ошибка обработки webhook: {e}")
+        print(f"\n❌ WEBHOOK ERROR: {e}\n", flush=True)
         import traceback
-        logger.error(traceback.format_exc())
+        print(traceback.format_exc(), flush=True)
         return web.Response(status=500, text=str(e))
 
 
