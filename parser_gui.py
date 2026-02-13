@@ -333,21 +333,24 @@ def get_images_dir(script_dir):
     """
     Определяет путь к папке images в зависимости от окружения.
 
-    На Amvera (если существует /data/) → /data/images/
-    Локально → script_dir/images/
+    Приоритет:
+    1. /data/images/ (если существует и НЕ пустая) - постоянное хранилище Amvera
+    2. script_dir/images/ - из репозитория (fallback)
     """
-    # Проверяем, запущены ли мы на Amvera (есть папка /data)
+    # Проверяем /data/images/ на Amvera
     data_path = Path('/data')
     if data_path.exists() and data_path.is_dir():
-        # На Amvera - используем постоянное хранилище
-        images_dir = data_path / 'images'
-        images_dir.mkdir(exist_ok=True)
-        return images_dir
-    else:
-        # Локально - используем папку рядом со скриптом
-        images_dir = script_dir / 'images'
-        images_dir.mkdir(exist_ok=True)
-        return images_dir
+        data_images_dir = data_path / 'images'
+        data_images_dir.mkdir(exist_ok=True)
+
+        # Если там уже есть файлы - используем её
+        if any(data_images_dir.iterdir()):
+            return data_images_dir
+
+    # Fallback: локальная папка или images из репозитория
+    images_dir = script_dir / 'images'
+    images_dir.mkdir(exist_ok=True)
+    return images_dir
 
 
 def clean_product_name(name):
