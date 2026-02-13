@@ -1788,38 +1788,30 @@ HTML_TEMPLATE = """
             };
         }
 
-        // Обработчик MainButton
-        tg.MainButton.onClick(() => {
-            console.log('MainButton clicked!');
-            const data = prepareConsultationData();
-            console.log('Data prepared:', data);
-
-            const jsonData = JSON.stringify(data);
-            console.log('Sending data:', jsonData);
-
-            try {
-                tg.sendData(jsonData);
-                console.log('Data sent successfully!');
-            } catch (e) {
-                console.error('Error sending data:', e);
-                tg.showAlert('Ошибка: ' + e.message);
-            }
-        });
-
-        // Кнопка консультации показывает MainButton
+        // Кнопка консультации - открывает выбор менеджера
         document.getElementById('orderBtn').addEventListener('click', () => {
             const data = prepareConsultationData();
-            console.log('Consultation button clicked, items:', data.items.length);
 
             if (data.items.length === 0) {
                 tg.showAlert('Добавьте хотя бы один товар в интересное!');
                 return;
             }
 
-            // Показываем MainButton для отправки
-            tg.MainButton.setText('✅ Отправить запрос');
-            tg.MainButton.show();
-            console.log('MainButton shown');
+            // Формируем текст для отправки менеджеру
+            let messageText = 'Здравствуйте, подскажите о наличии товара:\\n\\n';
+            data.items.forEach(item => {
+                messageText += `• ${item.name} — ${item.price} ₽\\n`;
+            });
+            messageText += `\\n💰 Общая стоимость: ${data.total} ₽`;
+
+            // Показываем выбор менеджера через confirm
+            const choice = confirm('Выберите менеджера:\\n\\nОК - @AlexeyBakaev\\nОтмена - @musyanya');
+
+            const username = choice ? 'AlexeyBakaev' : 'musyanya';
+            const url = `https://t.me/${username}?text=${encodeURIComponent(messageText)}`;
+
+            // Открываем чат с менеджером
+            tg.openTelegramLink(url);
         });
     </script>
 </body>
