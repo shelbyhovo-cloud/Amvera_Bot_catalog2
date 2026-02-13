@@ -876,7 +876,7 @@ class ParserApp:
                     # F: Подгруппа (заполняется вручную)
                     ws.cell(row_num, 7).value = product_data['image_urls']     # G: URL фото
                     ws.cell(row_num, 8).value = product_data['local_images']   # H: Локальное фото
-                    # I: Размеры (заполняется вручную)
+                    ws.cell(row_num, 9).value = product_data.get('sizes', '')  # I: Размеры (автоматически!)
                     ws.cell(row_num, 10).value = datetime.now().strftime("%Y-%m-%d %H:%M")  # J: Обновление
                     ws.cell(row_num, 11).value = "✅ Обновлено"                # K: Статус
 
