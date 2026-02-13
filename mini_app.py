@@ -836,70 +836,18 @@ HTML_TEMPLATE = """
         }
 
         .product-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.15) 100%);
-            backdrop-filter: blur(25px) saturate(200%);
-            -webkit-backdrop-filter: blur(25px) saturate(200%);
-            border-radius: 24px;
-            padding: 18px;
+            display: flex;
+            align-items: center;
+            background: #252831;
+            height: 180px;
+            border-radius: 20px;
             cursor: pointer;
-            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            box-shadow:
-                0 10px 40px rgba(0, 0, 0, 0.15),
-                0 4px 10px rgba(0, 0, 0, 0.1),
-                inset 0 2px 0 rgba(255, 255, 255, 0.6),
-                inset 0 -2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
             position: relative;
-            overflow: visible;
+            overflow: hidden;
             animation: fadeInUp 0.6s ease-out;
             animation-fill-mode: both;
-            transform-style: preserve-3d;
-        }
-
-        .product-card::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3), rgba(240, 147, 251, 0.3));
-            border-radius: 24px;
-            opacity: 0;
-            transition: opacity 0.5s;
-            z-index: -1;
-            filter: blur(15px);
-        }
-
-        .product-card:hover::before {
-            opacity: 1;
-        }
-
-        .product-card:hover {
-            transform: translateY(-15px) scale(1.05) rotateX(2deg);
-            box-shadow:
-                0 25px 70px rgba(0, 0, 0, 0.3),
-                0 10px 30px rgba(102, 126, 234, 0.3),
-                0 0 60px rgba(255, 255, 255, 0.2),
-                inset 0 2px 0 rgba(255, 255, 255, 0.9),
-                inset 0 -2px 10px rgba(0, 0, 0, 0.05);
-            border-color: rgba(255, 255, 255, 0.8);
-        }
-
-        .product-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            transform: scaleX(0);
-            transition: transform 0.3s ease;
-        }
-
-        .product-card:hover::before {
-            transform: scaleX(1);
         }
 
         .product-card:active {
@@ -907,22 +855,54 @@ HTML_TEMPLATE = """
         }
 
         .product-card.in-cart {
-            border-color: #667eea;
-            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.25);
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            box-shadow: 0 4px 16px rgba(255, 109, 57, 0.4);
+        }
+
+        .card-left {
+            height: 140px;
+            width: 130px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #ff6d39;
+            margin-left: 8px;
+            border-radius: 0% 50% 50% 0%;
+            position: relative;
+            z-index: 2;
+            flex-shrink: 0;
+        }
+
+        .card-left img {
+            max-width: 90px;
+            max-height: 90px;
+            object-fit: contain;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .card-right {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 16px 0 20px;
+            z-index: 1;
+        }
+
+        .product-info {
+            width: 100%;
         }
 
         .product-badge {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 8px;
+            right: 8px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 4px 10px;
             border-radius: 12px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
-            z-index: 1;
+            z-index: 3;
             box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
             display: none;
         }
@@ -932,44 +912,12 @@ HTML_TEMPLATE = """
             animation: pulse 2s infinite;
         }
 
-        .product-image {
-            position: relative;
-            text-align: center;
-            margin-bottom: 14px;
-            min-height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.2) 100%);
-            border-radius: 16px;
-            padding: 10px;
-            box-shadow:
-                inset 0 2px 10px rgba(255, 255, 255, 0.5),
-                inset 0 -2px 10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .product-image img {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 12px;
-            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-            filter: brightness(1.1) contrast(1.05);
-        }
-
-        .product-card:hover .product-image img {
-            transform: scale(1.15) rotate(2deg);
-            filter: brightness(1.2) contrast(1.1) saturate(1.2);
-        }
-
         .product-name {
             font-weight: 700;
-            font-size: 15px;
-            margin-bottom: 6px;
-            color: #2d2d2d;
-            text-shadow: 0 1px 3px rgba(255,255,255,0.5);
-            line-height: 1.4;
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #ff6d39;
+            line-height: 1.3;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -978,10 +926,9 @@ HTML_TEMPLATE = """
 
         .product-price {
             font-size: 24px;
-            font-weight: 900;
+            font-weight: 800;
             color: white;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.3);
-            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
             letter-spacing: -0.5px;
         }
 
@@ -1676,17 +1623,23 @@ HTML_TEMPLATE = """
                 let imageHtml;
                 if (product.image.startsWith('/images/')) {
                     // Реальная фотография
-                    imageHtml = `<img src="${product.image}" alt="${product.name}" onerror="this.parentElement.innerHTML='📦'">`;
+                    imageHtml = `<img src="${product.image}" alt="${product.name}" onerror="this.outerHTML='<div style=\\'font-size:48px\\'>📦</div>'">`;
                 } else {
                     // Placeholder эмодзи
-                    imageHtml = product.image;
+                    imageHtml = `<div style="font-size: 48px;">${product.image}</div>`;
                 }
 
                 card.innerHTML = `
                     ${quantity > 0 ? '<div class="product-badge">⭐ Интересно</div>' : ''}
-                    <div class="product-image">${imageHtml}</div>
-                    <div class="product-name">${product.name}</div>
-                    <div class="product-price">${product.price} ₽</div>
+                    <div class="card-left">
+                        ${imageHtml}
+                    </div>
+                    <div class="card-right">
+                        <div class="product-info">
+                            <div class="product-name">${product.name}</div>
+                            <div class="product-price">${product.price} ₽</div>
+                        </div>
+                    </div>
                 `;
 
                 // При клике открываем модальное окно
