@@ -734,30 +734,54 @@ HTML_TEMPLATE = """
         }
 
         .product-card {
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border-radius: 20px;
-            padding: 16px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.15) 100%);
+            backdrop-filter: blur(25px) saturate(200%);
+            -webkit-backdrop-filter: blur(25px) saturate(200%);
+            border-radius: 24px;
+            padding: 18px;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 2px solid rgba(255, 255, 255, 0.4);
             box-shadow:
-                0 8px 32px rgba(0, 0, 0, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+                0 10px 40px rgba(0, 0, 0, 0.15),
+                0 4px 10px rgba(0, 0, 0, 0.1),
+                inset 0 2px 0 rgba(255, 255, 255, 0.6),
+                inset 0 -2px 10px rgba(0, 0, 0, 0.05);
             position: relative;
-            overflow: hidden;
+            overflow: visible;
             animation: fadeInUp 0.6s ease-out;
             animation-fill-mode: both;
+            transform-style: preserve-3d;
+        }
+
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3), rgba(240, 147, 251, 0.3));
+            border-radius: 24px;
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: -1;
+            filter: blur(15px);
+        }
+
+        .product-card:hover::before {
+            opacity: 1;
         }
 
         .product-card:hover {
-            transform: translateY(-10px) scale(1.03);
+            transform: translateY(-15px) scale(1.05) rotateX(2deg);
             box-shadow:
-                0 20px 60px rgba(0, 0, 0, 0.3),
-                0 0 40px rgba(255, 255, 255, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.8);
-            border-color: rgba(255, 255, 255, 0.6);
+                0 25px 70px rgba(0, 0, 0, 0.3),
+                0 10px 30px rgba(102, 126, 234, 0.3),
+                0 0 60px rgba(255, 255, 255, 0.2),
+                inset 0 2px 0 rgba(255, 255, 255, 0.9),
+                inset 0 -2px 10px rgba(0, 0, 0, 0.05);
+            border-color: rgba(255, 255, 255, 0.8);
         }
 
         .product-card::before {
@@ -809,26 +833,32 @@ HTML_TEMPLATE = """
         .product-image {
             position: relative;
             text-align: center;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
             min-height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-            border-radius: 12px;
-            padding: 8px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.2) 100%);
+            border-radius: 16px;
+            padding: 10px;
+            box-shadow:
+                inset 0 2px 10px rgba(255, 255, 255, 0.5),
+                inset 0 -2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
         }
 
         .product-image img {
             width: 100%;
-            height: 140px;
+            height: 150px;
             object-fit: cover;
-            border-radius: 10px;
-            transition: transform 0.3s ease;
+            border-radius: 12px;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            filter: brightness(1.1) contrast(1.05);
         }
 
         .product-card:hover .product-image img {
-            transform: scale(1.05);
+            transform: scale(1.15) rotate(2deg);
+            filter: brightness(1.2) contrast(1.1) saturate(1.2);
         }
 
         .product-name {
@@ -1268,9 +1298,62 @@ HTML_TEMPLATE = """
         .modal-btn-secondary:hover {
             background: rgba(102, 126, 234, 0.2);
         }
+        /* Particles на фоне */
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float-particle 8s infinite;
+        }
+
+        @keyframes float-particle {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(20px);
+                opacity: 0;
+            }
+        }
+
+        .badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 2;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        .badge.new {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+        }
+
     </style>
 </head>
 <body>
+    <!-- Animated particles -->
+    <div class="particles-container"></div>
+
     <div class="header">
         <h1>⚡ NIMBLI</h1>
         <p class="subtitle">Спортивная экипировка премиум-класса</p>
@@ -1315,12 +1398,28 @@ HTML_TEMPLATE = """
     </div>
 
     <script>
+        // Создаём floating particles
+        function createParticles() {
+            const particleCount = 25;
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 8 + 's';
+                particle.style.animationDuration = (8 + Math.random() * 4) + 's';
+                document.body.appendChild(particle);
+            }
+        }
+
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.MainButton.hide();
 
         let cart = {};  // Теперь это список интересных товаров
         let products = [];
+
+        // Инициализация particles при загрузке
+        createParticles();
         let currentProduct = null;  // Текущий товар в модальном окне
 
         // Загружаем товары с сервера
@@ -1440,6 +1539,27 @@ HTML_TEMPLATE = """
 
                 grid.appendChild(card);
             });
+
+            // Добавляем badges на товары
+            setTimeout(() => {
+                const productCards = document.querySelectorAll('.product-card');
+                productCards.forEach((card, index) => {
+                    // Проверяем что badge ещё нет
+                    if (!card.querySelector('.badge')) {
+                        if (index % 3 === 0) {
+                            const badge = document.createElement('div');
+                            badge.className = 'badge new';
+                            badge.textContent = 'NEW';
+                            card.appendChild(badge);
+                        } else if (index % 3 === 1) {
+                            const badge = document.createElement('div');
+                            badge.className = 'badge';
+                            badge.textContent = 'HOT';
+                            card.appendChild(badge);
+                        }
+                    }
+                });
+            }, 50);
 
             updateCartFooter();
         }
