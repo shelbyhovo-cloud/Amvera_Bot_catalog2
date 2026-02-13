@@ -305,6 +305,58 @@ def parse_tradeinn_product(url, script_dir, product_id):
             if og_image and og_image.group(1).startswith('http'):
                 image_urls.append(og_image.group(1))
 
+        # Парсим размеры (для обуви, одежды)
+        sizes = []
+
+        # МЕТОД 1: Ищем размеры в select элементе
+        size_select_match = re.findall(r'<option[^>]*value="size:([^"]+)"[^>]*>([^<]+)</option>', html, re.IGNORECASE)
+        if size_select_match:
+            for size_value, size_label in size_select_match:
+                size_clean = size_label.strip()
+                if size_clean and size_clean.lower() not in ['выберите размер', 'choose size', 'select']:
+                    sizes.append(size_clean)
+
+        # МЕТОД 2: Ищем размеры в data-атрибутах
+        if not sizes:
+            size_data_match = re.findall(r'data-size="([^"]+)"', html, re.IGNORECASE)
+            if size_data_match:
+                for size in size_data_match:
+                    size_clean = size.strip()
+                    if size_clean and len(size_clean) <= 10:  # Фильтруем слишком длинные строки
+                        sizes.append(size_clean)
+
+        # МЕТОД 3: Ищем размеры в JSON данных
+        if not sizes:
+            sizes_json_match = re.search(r'"sizes"\s*:\s*\[([^\]]+)\]', html)
+            if sizes_json_match:
+                try:
+                    import json
+                    sizes_text = '[' + sizes_json_match.group(1) + ']'
+                    sizes_data = json.loads(sizes_text)
+                    for size in sizes_data:
+                        if isinstance(size, (str, int, float)):
+                            sizes.append(str(size))
+                except:
+                    pass
+
+        # МЕТОД 4: Ищем размеры в списке доступности (для обуви)
+        if not sizes and ('обувь' in name.lower() or 'shoe' in name.lower() or 'boot' in name.lower() or 'sneaker' in name.lower()):
+            # Ищем размеры в элементах списка
+            size_list_match = re.findall(r'<li[^>]*data-value="(\d{2}(?:[.,]\d)?)"', html, re.IGNORECASE)
+            if size_list_match:
+                for size in size_list_match:
+                    if 35 <= float(size.replace(',', '.')) <= 50 and size not in sizes:
+                        sizes.append(size)
+
+        # Убираем дубликаты и сортируем
+        if sizes:
+            sizes = list(dict.fromkeys(sizes))  # Убираем дубликаты, сохраняя порядок
+            # Пытаемся отсортировать численно
+            try:
+                sizes = sorted(set(sizes), key=lambda x: float(x.replace(',', '.')) if x.replace(',', '.').replace('.', '').isdigit() else 999)
+            except:
+                pass
+
         # Скачиваем фотки
         images_dir = script_dir / "images"
         images_dir.mkdir(exist_ok=True)
@@ -320,7 +372,8 @@ def parse_tradeinn_product(url, script_dir, product_id):
             "description": description,
             "price": price,
             "image_urls": ", ".join(image_urls) if image_urls else "",
-            "local_images": ", ".join(local_images) if local_images else ""
+            "local_images": ", ".join(local_images) if local_images else "",
+            "sizes": ", ".join(sizes) if sizes else ""
         }, None
 
     except Exception as e:

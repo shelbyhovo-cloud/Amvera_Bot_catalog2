@@ -328,7 +328,9 @@ def load_products_from_excel(file_path=None):
             description = ws.cell(row_num, 4).value   # D: Описание
             category = ws.cell(row_num, 5).value      # E: Группа
             subcategory = ws.cell(row_num, 6).value   # F: Подгруппа
+            image_urls = ws.cell(row_num, 7).value    # G: URL фото
             local_images = ws.cell(row_num, 8).value  # H: Локальное фото
+            sizes = ws.cell(row_num, 9).value         # I: Размеры
 
             # Пропускаем строки без данных
             if not name or not price:
@@ -336,16 +338,26 @@ def load_products_from_excel(file_path=None):
 
             # Определяем изображение для показа
             image_to_use = "📦"  # По умолчанию placeholder эмодзи
+            all_images = []  # Все фотографии для галереи
 
             # Если есть локальные фотографии, используем первую
             if local_images:
                 # Локальные фото могут быть разделены запятыми
                 local_photos = [img.strip() for img in local_images.split(',')]
                 if local_photos:
-                    # Убираем префикс "images\" или "images/" если он есть
-                    photo_path = local_photos[0].replace('images\\', '').replace('images/', '')
-                    # Используем первую фотографию
-                    image_to_use = f"/images/{photo_path}"
+                    # Создаем массив всех локальных фотографий для галереи
+                    for photo in local_photos:
+                        # Убираем префикс "images\" или "images/" если он есть
+                        photo_path = photo.replace('images\\', '').replace('images/', '')
+                        all_images.append(f"/images/{photo_path}")
+
+                    # Используем первую фотографию как основную
+                    image_to_use = all_images[0]
+
+            # Парсим размеры в массив
+            sizes_array = []
+            if sizes:
+                sizes_array = [s.strip() for s in str(sizes).split(',') if s.strip()]
 
             products.append({
                 "id": row_num - 1,
@@ -353,6 +365,8 @@ def load_products_from_excel(file_path=None):
                 "description": description or "",
                 "price": int(price) if price else 0,
                 "image": image_to_use,
+                "images": all_images if all_images else [image_to_use],  # Массив всех фото
+                "sizes": sizes_array,  # Массив размеров
                 "category": category or "",
                 "subcategory": subcategory or "",
             })
@@ -968,6 +982,88 @@ HTML_TEMPLATE = """
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: opacity 0.3s ease;
+        }
+
+        .gallery-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .gallery-nav:hover {
+            background: white;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .gallery-nav-prev {
+            left: 10px;
+        }
+
+        .gallery-nav-next {
+            right: 10px;
+        }
+
+        .gallery-counter {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 10;
+        }
+
+        .sizes-section {
+            margin-bottom: 20px;
+        }
+
+        .sizes-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--tg-theme-text-color, #212529);
+        }
+
+        .sizes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 8px;
+        }
+
+        .size-badge {
+            padding: 10px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--tg-theme-text-color, #212529);
+            transition: all 0.3s ease;
+        }
+
+        .size-badge:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border-color: #667eea;
+            transform: translateY(-2px);
         }
 
         .modal-body {
@@ -1106,6 +1202,9 @@ HTML_TEMPLATE = """
             <button class="modal-close" onclick="closeProductModal()">×</button>
             <div class="modal-image-container">
                 <img class="modal-image" id="modalImage" src="" alt="">
+                <button class="gallery-nav gallery-nav-prev" id="galleryPrev" onclick="changeModalImage(-1)" style="display: none;">‹</button>
+                <button class="gallery-nav gallery-nav-next" id="galleryNext" onclick="changeModalImage(1)" style="display: none;">›</button>
+                <div class="gallery-counter" id="galleryCounter" style="display: none;">1 / 1</div>
             </div>
             <div class="modal-body">
                 <h2 class="modal-title" id="modalTitle"></h2>
@@ -1116,9 +1215,9 @@ HTML_TEMPLATE = """
                     <span class="modal-price" id="modalPrice"></span>
                 </div>
 
-                <div class="modal-info-section" id="modalInfoSection" style="display: none;">
-                    <h3 class="modal-info-title">📋 Характеристики</h3>
-                    <div id="modalInfo"></div>
+                <div class="sizes-section" id="sizesSection" style="display: none;">
+                    <h3 class="sizes-title">👟 Доступные размеры</h3>
+                    <div class="sizes-grid" id="sizesGrid"></div>
                 </div>
 
                 <div class="modal-actions">
@@ -1137,6 +1236,7 @@ HTML_TEMPLATE = """
         let cart = {};  // Теперь это список интересных товаров
         let products = [];
         let currentProduct = null;  // Текущий товар в модальном окне
+        let currentImageIndex = 0;  // Текущий индекс фотографии в галерее
 
         // Загружаем товары с сервера
         fetch('/api/products')
@@ -1146,10 +1246,34 @@ HTML_TEMPLATE = """
                 renderProducts();
             });
 
+        // Переключение фотографий в галерее
+        function changeModalImage(direction) {
+            if (!currentProduct || !currentProduct.images || currentProduct.images.length <= 1) return;
+
+            currentImageIndex += direction;
+
+            // Циклическое переключение
+            if (currentImageIndex < 0) {
+                currentImageIndex = currentProduct.images.length - 1;
+            } else if (currentImageIndex >= currentProduct.images.length) {
+                currentImageIndex = 0;
+            }
+
+            const modalImage = document.getElementById('modalImage');
+            const galleryCounter = document.getElementById('galleryCounter');
+
+            modalImage.src = currentProduct.images[currentImageIndex];
+            galleryCounter.textContent = `${currentImageIndex + 1} / ${currentProduct.images.length}`;
+
+            tg.HapticFeedback.impactOccurred('light');
+        }
+
         // Открытие модального окна
         function openProductModal(productId) {
             currentProduct = products.find(p => p.id === productId);
             if (!currentProduct) return;
+
+            currentImageIndex = 0;  // Сбрасываем на первую фотографию
 
             const modal = document.getElementById('productModal');
             const modalImage = document.getElementById('modalImage');
@@ -1157,18 +1281,53 @@ HTML_TEMPLATE = """
             const modalDescription = document.getElementById('modalDescription');
             const modalPrice = document.getElementById('modalPrice');
             const modalAddBtn = document.getElementById('modalAddBtn');
+            const galleryPrev = document.getElementById('galleryPrev');
+            const galleryNext = document.getElementById('galleryNext');
+            const galleryCounter = document.getElementById('galleryCounter');
+            const sizesSection = document.getElementById('sizesSection');
+            const sizesGrid = document.getElementById('sizesGrid');
 
             // Устанавливаем изображение
-            if (currentProduct.image.startsWith('/images/')) {
-                modalImage.src = currentProduct.image;
+            const images = currentProduct.images || [currentProduct.image];
+            if (images[0] && images[0].startsWith('/images/')) {
+                modalImage.src = images[0];
                 modalImage.style.display = 'block';
+
+                // Показываем кнопки галереи, если фото больше одной
+                if (images.length > 1) {
+                    galleryPrev.style.display = 'flex';
+                    galleryNext.style.display = 'flex';
+                    galleryCounter.style.display = 'block';
+                    galleryCounter.textContent = `1 / ${images.length}`;
+                } else {
+                    galleryPrev.style.display = 'none';
+                    galleryNext.style.display = 'none';
+                    galleryCounter.style.display = 'none';
+                }
             } else {
                 modalImage.style.display = 'none';
+                galleryPrev.style.display = 'none';
+                galleryNext.style.display = 'none';
+                galleryCounter.style.display = 'none';
             }
 
             modalTitle.textContent = currentProduct.name;
             modalDescription.textContent = currentProduct.description;
             modalPrice.textContent = currentProduct.price + ' ₽';
+
+            // Показываем размеры, если они есть
+            if (currentProduct.sizes && currentProduct.sizes.length > 0) {
+                sizesSection.style.display = 'block';
+                sizesGrid.innerHTML = '';
+                currentProduct.sizes.forEach(size => {
+                    const sizeBadge = document.createElement('div');
+                    sizeBadge.className = 'size-badge';
+                    sizeBadge.textContent = size;
+                    sizesGrid.appendChild(sizeBadge);
+                });
+            } else {
+                sizesSection.style.display = 'none';
+            }
 
             // Обновляем кнопку
             const isInteresting = cart[productId] && cart[productId] > 0;
