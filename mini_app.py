@@ -668,7 +668,7 @@ HTML_TEMPLATE = """
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: linear-gradient(-45deg, #FFD93D, #6BCF7F, #4D96FF, #FFA5E4, #A8DADC);
+            background: linear-gradient(-45deg, #FFD93D, #FFF7AE, #81D4FA, #B3E5FC, #E3F2FD);
             background-size: 400% 400%;
             animation: gradientShift 15s ease infinite;
             color: #1a1a1a;
