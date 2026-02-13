@@ -1804,10 +1804,9 @@ HTML_TEMPLATE = """
             });
             messageText += `\\n💰 Общая стоимость: ${data.total} ₽`;
 
-            // Показываем выбор менеджера через confirm
-            const choice = confirm('Выберите менеджера:\\n\\nОК - @AlexeyBakaev\\nОтмена - @musyanya');
-
-            const username = choice ? 'AlexeyBakaev' : 'musyanya';
+            // Случайно выбираем менеджера
+            const managers = ['AlexeyBakaev', 'musyanya'];
+            const username = managers[Math.floor(Math.random() * managers.length)];
             const url = `https://t.me/${username}?text=${encodeURIComponent(messageText)}`;
 
             // Открываем чат с менеджером
