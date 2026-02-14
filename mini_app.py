@@ -773,7 +773,7 @@ HTML_TEMPLATE = """
             display: flex;
             gap: 10px;
             overflow-x: auto;
-            padding: 0 20px 12px;
+            padding: 4px 20px 12px;
             scrollbar-width: thin;
             scrollbar-color: rgba(102, 126, 234, 0.3) transparent;
         }
