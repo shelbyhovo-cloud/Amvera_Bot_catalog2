@@ -512,6 +512,40 @@ async def cmd_shop(message: types.Message):
     )
 
 
+@dp.message(Command("post"))
+async def cmd_post(message: types.Message):
+    """Команда /post - публикует пост с кнопкой каталога для группы."""
+    username = message.from_user.username
+    if username not in ADMIN_USERNAMES:
+        return
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🛍 Открыть каталог",
+                    url=f"https://t.me/Catalog_Alex_bot?start=shop",
+                )
+            ]
+        ]
+    )
+    await message.answer(
+        "🏐 <b>NIMBLI — Спортивный каталог</b>\n\n"
+        "⚡ Кроссовки, ракетки, экипировка и аксессуары\n"
+        "📦 Цены с доставкой\n"
+        "🇪🇺 Европейские размеры\n\n"
+        "👇 Нажми кнопку, чтобы открыть каталог!",
+        reply_markup=keyboard,
+        parse_mode="HTML",
+    )
+
+    # Удаляем команду /post чтобы не засорять чат
+    try:
+        await message.delete()
+    except:
+        pass
+
+
 @dp.message(Command("reload"))
 async def cmd_reload(message: types.Message):
     """Команда /reload - перезагружает каталог товаров из Excel."""
