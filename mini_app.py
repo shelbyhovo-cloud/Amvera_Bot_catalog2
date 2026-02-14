@@ -472,7 +472,12 @@ dp = Dispatcher()
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     """Команда /start - показывает приветствие и кнопку магазина."""
-    keyboard = ReplyKeyboardMarkup(
+    # Проверяем параметр (из канала: /start catalog)
+    args = message.text.split(maxsplit=1)
+    from_channel = len(args) > 1 and args[1] == "catalog"
+
+    # Клавиатура с кнопкой каталога внизу
+    reply_keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [
                 KeyboardButton(
@@ -484,13 +489,39 @@ async def cmd_start(message: types.Message):
         resize_keyboard=True,
         is_persistent=True,
     )
-    await message.answer(
-        "🏐 <b>Добро пожаловать в NIMBLI!</b>\n\n"
-        "⚡ Твой спортивный магазин!\n"
-        "Нажми кнопку <b>🛍 Каталог</b> внизу экрана!",
-        reply_markup=keyboard,
-        parse_mode="HTML",
-    )
+
+    if from_channel:
+        # Пришёл из канала — сразу показываем inline кнопку с Mini App
+        inline_keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="🛍 Открыть каталог",
+                        web_app=WebAppInfo(url=WEBAPP_URL),
+                    )
+                ]
+            ]
+        )
+        await message.answer(
+            "🏐 <b>Добро пожаловать в NIMBLI!</b>\n\n"
+            "Нажми кнопку чтобы открыть каталог! 👇",
+            reply_markup=inline_keyboard,
+            parse_mode="HTML",
+        )
+        # Также ставим кнопку каталога внизу
+        await message.answer(
+            "Или используй кнопку внизу экрана ⬇️",
+            reply_markup=reply_keyboard,
+            parse_mode="HTML",
+        )
+    else:
+        await message.answer(
+            "🏐 <b>Добро пожаловать в NIMBLI!</b>\n\n"
+            "⚡ Твой спортивный магазин!\n"
+            "Нажми кнопку <b>🛍 Каталог</b> внизу экрана!",
+            reply_markup=reply_keyboard,
+            parse_mode="HTML",
+        )
 
 
 @dp.message(Command("shop"))
@@ -526,7 +557,7 @@ async def cmd_post(message: types.Message):
             [
                 InlineKeyboardButton(
                     text="🛍 Открыть каталог",
-                    url=WEBAPP_URL,
+                    url="https://t.me/Catalog_Alex_bot?start=catalog",
                 )
             ]
         ]
