@@ -764,7 +764,7 @@ HTML_TEMPLATE = """
         }
 
         .categories-container {
-            margin: 24px auto 16px;
+            margin: 32px auto 16px;
             max-width: 100%;
             animation: fadeInUp 0.8s ease-out 0.2s both;
         }
