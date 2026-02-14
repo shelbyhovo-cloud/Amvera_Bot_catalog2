@@ -476,14 +476,17 @@ async def cmd_start(message: types.Message):
     args = message.text.split(maxsplit=1)
     from_channel = len(args) > 1 and args[1] == "catalog"
 
-    # Клавиатура с кнопкой каталога внизу
+    # Клавиатура с кнопками внизу
     reply_keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [
                 KeyboardButton(
                     text="🛍 Каталог",
                     web_app=WebAppInfo(url=WEBAPP_URL),
-                )
+                ),
+                KeyboardButton(
+                    text="📢 Наш канал",
+                ),
             ]
         ],
         resize_keyboard=True,
@@ -522,6 +525,27 @@ async def cmd_start(message: types.Message):
             reply_markup=reply_keyboard,
             parse_mode="HTML",
         )
+
+
+@dp.message(F.text == "📢 Наш канал")
+async def btn_channel(message: types.Message):
+    """Кнопка 'Наш канал' — ссылка на канал."""
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="📢 Перейти в канал",
+                    url="https://t.me/nimbli_sport",
+                )
+            ]
+        ]
+    )
+    await message.answer(
+        "🏐 <b>NIMBLI</b> | Нишевый спорт из Европы\n\n"
+        "Подпишись на наш канал!",
+        reply_markup=keyboard,
+        parse_mode="HTML",
+    )
 
 
 @dp.message(Command("shop"))
