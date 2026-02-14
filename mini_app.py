@@ -814,9 +814,9 @@ HTML_TEMPLATE = """
         }
 
         .category-tab.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(135deg, #FFD700 0%, #DAA520 100%);
+            color: #2d3748;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5);
         }
 
         .search-container {
