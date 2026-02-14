@@ -12,6 +12,7 @@ from pathlib import Path
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import io
+import json
 import zipfile
 
 # Фикс кодировки для Windows консоли
@@ -801,6 +802,7 @@ class ParserApp:
         # Папка скрипта
         self.script_dir = Path(__file__).parent
         self.file_path = self.script_dir / "products_links.xlsx"
+        self.settings_file = self.script_dir / "parser_settings.json"
 
         # Стили
         style = ttk.Style()
@@ -897,7 +899,7 @@ class ParserApp:
             fg="#333"
         ).pack(side=tk.LEFT, padx=(0, 8))
 
-        self.threads_var = tk.IntVar(value=5)
+        self.threads_var = tk.IntVar(value=saved.get("threads", 5))
         self.threads_spinbox = tk.Spinbox(
             threads_frame,
             from_=1,
@@ -1036,7 +1038,7 @@ class ParserApp:
             font=("Segoe UI", 10),
             width=10
         )
-        self.markup_entry.insert(0, "0.5")
+        self.markup_entry.insert(0, str(saved.get("markup", 0.5)))
         self.markup_entry.grid(row=2, column=1, sticky=tk.W, pady=5)
 
         markup_hint = tk.Label(
@@ -1055,8 +1057,10 @@ class ParserApp:
         self.categories_main_frame = ttk.LabelFrame(currency_scrollable_frame, text="📋 Категории и стоимость доставки (€)", padding="15")
         self.categories_main_frame.pack(fill=tk.X, pady=10)
 
-        # Инициализируем данные категорий
-        self.categories_data = [
+        # Загружаем сохранённые настройки (или дефолтные)
+        saved = self._load_settings()
+
+        self.categories_data = saved.get("categories", [
             {"name": "Очки", "delivery": 12},
             {"name": "Ракетка", "delivery": 17},
             {"name": "Кроссовки", "delivery": 28},
@@ -1066,7 +1070,7 @@ class ParserApp:
             {"name": "Ботинки борд", "delivery": 25},
             {"name": "Термо", "delivery": 17},
             {"name": "Очки для снега", "delivery": 17}
-        ]
+        ])
 
         # Создаем фрейм для таблицы (будет перерисовываться)
         self.categories_table_frame = tk.Frame(self.categories_main_frame)
@@ -1109,10 +1113,10 @@ class ParserApp:
         # 🏷️ БРЕНДЫ
         # ═══════════════════════════════════════════════════════════
 
-        self.brands_data = [
+        self.brands_data = saved.get("brands", [
             "Asics", "Adidas", "Bullpadel", "Drop Shot", "Head",
             "Joma", "Mizuno", "Nike", "Nox", "Oakley", "Puma", "Siux", "Wilson"
-        ]
+        ])
 
         self.brands_main_frame = ttk.LabelFrame(currency_scrollable_frame, text="🏷️ Бренды (для авто-определения из названий)", padding="15")
         self.brands_main_frame.pack(fill=tk.X, pady=10)
@@ -1715,6 +1719,39 @@ class ParserApp:
     # 💱 МЕТОДЫ ДЛЯ РАБОТЫ С КУРСОМ ВАЛЮТЫ
     # ═══════════════════════════════════════════════════════════
 
+    def _load_settings(self):
+        """Загружает настройки из JSON файла."""
+        try:
+            if self.settings_file.exists():
+                with open(self.settings_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+        except Exception:
+            pass
+        return {}
+
+    def _save_settings(self):
+        """Сохраняет текущие настройки в JSON файл."""
+        try:
+            # Считываем актуальные бренды из полей ввода
+            brands = self.get_brands_from_ui()
+
+            # Считываем надбавку
+            try:
+                markup = float(self.markup_entry.get())
+            except ValueError:
+                markup = 0.5
+
+            settings = {
+                "categories": self.categories_data,
+                "brands": brands,
+                "markup": markup,
+                "threads": self.threads_var.get(),
+            }
+            with open(self.settings_file, 'w', encoding='utf-8') as f:
+                json.dump(settings, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
     def refresh_categories_table(self):
         """Перерисовывает таблицу категорий."""
         # Очищаем старую таблицу
@@ -1800,10 +1837,11 @@ class ParserApp:
 
         # Обновляем таблицу
         self.refresh_categories_table()
+        self._save_settings()
 
         messagebox.showinfo(
             "Готово!",
-            f"✅ Категория '{category_name}' добавлена!\n\nНе забудьте нажать '💾 Сохранить изменения'"
+            f"✅ Категория '{category_name}' добавлена!"
         )
 
     def delete_category(self, index):
@@ -1825,10 +1863,11 @@ class ParserApp:
         if result:
             self.categories_data.pop(index)
             self.refresh_categories_table()
+            self._save_settings()
 
             messagebox.showinfo(
                 "Удалено!",
-                f"✅ Категория '{category_name}' удалена!\n\nНе забудьте нажать '💾 Сохранить изменения'"
+                f"✅ Категория '{category_name}' удалена!"
             )
 
     def refresh_brands_table(self):
@@ -1868,12 +1907,13 @@ class ParserApp:
             return
         self.brands_data.append(brand_name.strip())
         self.refresh_brands_table()
+        self._save_settings()
 
     def delete_brand(self, index):
         """Удаляет бренд по индексу."""
-        brand_name = self.brands_data[index]
         self.brands_data.pop(index)
         self.refresh_brands_table()
+        self._save_settings()
 
     def get_brands_from_ui(self):
         """Считывает актуальные бренды из полей ввода."""
@@ -1950,6 +1990,7 @@ class ParserApp:
 
             # Обновляем таблицу в GUI
             self.refresh_categories_table()
+            self._save_settings()
 
             messagebox.showinfo(
                 "Сохранено!",
