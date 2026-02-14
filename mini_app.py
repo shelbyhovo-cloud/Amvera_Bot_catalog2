@@ -1684,17 +1684,13 @@ HTML_TEMPLATE = """
             position: absolute;
             top: 12px;
             right: 12px;
-            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            background: linear-gradient(135deg, #a18cd1, #fbc2eb);
             color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
             z-index: 2;
-            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
-            animation: pulse 2s infinite;
         }
 
         .badge.new {
@@ -1970,6 +1966,7 @@ HTML_TEMPLATE = """
             filteredProducts.forEach(product => {
                 const card = document.createElement('div');
                 card.className = 'product-card';
+                card.dataset.id = product.id;
                 if (cart[product.id]) {
                     card.classList.add('in-cart');
                 }
@@ -2002,21 +1999,16 @@ HTML_TEMPLATE = """
 
             // Добавляем badges на товары
             setTimeout(() => {
+                // Бейджи баланса (Мощность и т.д.) — справа сверху
                 const productCards = document.querySelectorAll('.product-card');
-                productCards.forEach((card, index) => {
-                    // Проверяем что badge ещё нет
-                    if (!card.querySelector('.badge')) {
-                        if (index % 3 === 0) {
-                            const badge = document.createElement('div');
-                            badge.className = 'badge new';
-                            badge.textContent = 'NEW';
-                            card.appendChild(badge);
-                        } else if (index % 3 === 1) {
-                            const badge = document.createElement('div');
-                            badge.className = 'badge';
-                            badge.textContent = 'HOT';
-                            card.appendChild(badge);
-                        }
+                productCards.forEach((card) => {
+                    const productId = parseInt(card.dataset.id);
+                    const product = products.find(p => p.id === productId);
+                    if (product && product.balance && !card.querySelector('.badge')) {
+                        const badge = document.createElement('div');
+                        badge.className = 'badge';
+                        badge.textContent = product.balance;
+                        card.appendChild(badge);
                     }
                 });
             }, 50);
