@@ -804,6 +804,9 @@ class ParserApp:
         self.file_path = self.script_dir / "products_links.xlsx"
         self.settings_file = self.script_dir / "parser_settings.json"
 
+        # Загружаем сохранённые настройки
+        saved = self._load_settings()
+
         # Стили
         style = ttk.Style()
         style.theme_use('clam')
@@ -1056,9 +1059,6 @@ class ParserApp:
         # Фрейм для категорий
         self.categories_main_frame = ttk.LabelFrame(currency_scrollable_frame, text="📋 Категории и стоимость доставки (€)", padding="15")
         self.categories_main_frame.pack(fill=tk.X, pady=10)
-
-        # Загружаем сохранённые настройки (или дефолтные)
-        saved = self._load_settings()
 
         self.categories_data = saved.get("categories", [
             {"name": "Очки", "delivery": 12},
