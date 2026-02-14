@@ -353,31 +353,40 @@ def load_products_from_excel(file_path=None):
 
         from openpyxl import load_workbook
 
-        # data_only=True заставляет читать ЗНАЧЕНИЯ формул, а не сами формулы
-        wb = load_workbook(file_path, data_only=True)
-        ws = wb.active
+        # Загружаем двумя способами:
+        # data_only=True — кэшированные значения формул (если файл сохранён из Excel)
+        # data_only=False — сырые значения (числа или формулы как строки)
+        wb_data = load_workbook(file_path, data_only=True)
+        wb_raw = load_workbook(file_path, data_only=False)
+        ws_data = wb_data.active
+        ws_raw = wb_raw.active
 
         products = []
 
-        for row_num in range(2, ws.max_row + 1):
-            name = ws.cell(row_num, 2).value          # B: Название
-            category = ws.cell(row_num, 4).value      # D: Группа
-            subcategory = ws.cell(row_num, 5).value       # E: Подгруппа
-            product_category = ws.cell(row_num, 6).value  # F: Категория товара
-            brand = ws.cell(row_num, 20).value            # T: Бренд
-            image_urls = ws.cell(row_num, 7).value        # G: URL фото
-            local_images = ws.cell(row_num, 8).value      # H: Локальное фото
-            sizes = ws.cell(row_num, 9).value             # I: Размеры
+        for row_num in range(2, ws_data.max_row + 1):
+            name = ws_data.cell(row_num, 2).value          # B: Название
+            category = ws_data.cell(row_num, 4).value      # D: Группа
+            subcategory = ws_data.cell(row_num, 5).value       # E: Подгруппа
+            product_category = ws_data.cell(row_num, 6).value  # F: Категория товара
+            brand = ws_data.cell(row_num, 20).value            # T: Бренд
+            image_urls = ws_data.cell(row_num, 7).value        # G: URL фото
+            local_images = ws_data.cell(row_num, 8).value      # H: Локальное фото
+            sizes = ws_data.cell(row_num, 9).value             # I: Размеры
 
-            # Берём "Цена с дост. (₽)" из столбца P, фоллбэк на C (€)
-            price_with_delivery = ws.cell(row_num, 16).value  # P: Цена с дост. (₽)
-            price_eur = ws.cell(row_num, 3).value              # C: Цена (€)
+            # Берём цену: P(кэш) → P(сырое) → C(€)
+            price_cached = ws_data.cell(row_num, 16).value  # P: кэш формулы
+            price_raw = ws_raw.cell(row_num, 16).value      # P: сырое значение
+            price_eur = ws_data.cell(row_num, 3).value       # C: Цена (€)
 
             price = None
-            if price_with_delivery and isinstance(price_with_delivery, (int, float)) and price_with_delivery > 0:
-                price = int(price_with_delivery)
+            # 1. Кэшированное значение формулы (файл сохранён из Excel)
+            if price_cached and isinstance(price_cached, (int, float)) and price_cached > 0:
+                price = int(price_cached)
+            # 2. Сырое число в ячейке (не формула)
+            elif price_raw and isinstance(price_raw, (int, float)) and price_raw > 0:
+                price = int(price_raw)
+            # 3. Фоллбэк на цену в евро
             elif price_eur and isinstance(price_eur, (int, float)) and price_eur > 0:
-                # Фоллбэк: цена в евро (формулы ещё не рассчитаны Excel'ом)
                 price = int(price_eur)
 
             # Пропускаем строки без данных
@@ -419,6 +428,9 @@ def load_products_from_excel(file_path=None):
                 "product_category": product_category or "",
                 "brand": brand or "",
             })
+
+        wb_data.close()
+        wb_raw.close()
 
         if products:
             PRODUCTS = products
