@@ -450,7 +450,7 @@ async def cmd_start(message: types.Message):
         is_persistent=True,
     )
     await message.answer(
-        "🏐 <b>Добро пожаловать в NIMBLI SPORT!</b>\n\n"
+        "🏐 <b>Добро пожаловать в NIMBLI!</b>\n\n"
         "⚡ Твой спортивный магазин!\n"
         "Нажми кнопку <b>🛍 Каталог</b> внизу экрана!",
         reply_markup=keyboard,
@@ -704,7 +704,7 @@ HTML_TEMPLATE = """
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: linear-gradient(-45deg, #4facfe, #00f2fe, #43e97b, #38f9d7);
+            background: linear-gradient(-45deg, #f5f7fa, #e9ecef, #dee2e6, #f8f9fa);
             background-size: 400% 400%;
             animation: gradientShift 15s ease infinite;
             color: #1a1a1a;
@@ -1401,7 +1401,7 @@ HTML_TEMPLATE = """
     <div class="particles-container"></div>
 
     <div class="header">
-        <h1>🏐 NIMBLI SPORT</h1>
+        <h1>🏐 NIMBLI</h1>
         <p class="subtitle">Твой спорт • Твоя победа • Твой успех</p>
     </div>
 
