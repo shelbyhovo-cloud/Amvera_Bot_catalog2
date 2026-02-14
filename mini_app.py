@@ -621,11 +621,11 @@ async def handle_web_app_data(message: types.Message):
         products_list = ""
         for item in items:
             rounded_price = math.ceil(item['price'] / 100) * 100
-            products_list += f"• {item['name']} — {rounded_price} ₽\n"
+            products_list += f"• {item['name']} — {rounded_price:,.0f} ₽\n".replace(',', ' ')
 
         # Формируем текст для предзаполнения в личке
         rounded_total = math.ceil(total / 100) * 100
-        prefilled_text = f"Здравствуйте, подскажите о наличии товара:\n\n{products_list}\n💰 Общая стоимость: {rounded_total} ₽"
+        prefilled_text = f"Здравствуйте, подскажите о наличии товара:\n\n{products_list}\n💰 Общая стоимость: {rounded_total:,.0f} ₽".replace(',', ' ')
         encoded_text = quote(prefilled_text)
 
         # Показываем сообщение пользователю с выбором менеджера
@@ -633,12 +633,14 @@ async def handle_web_app_data(message: types.Message):
 
         for item in items:
             rounded_price = math.ceil(item['price'] / 100) * 100
+            formatted_price = f"{rounded_price:,.0f}".replace(',', ' ')
             message_text += (
                 f"<b>{item['name']}</b>\n"
-                f"💰 Цена: {rounded_price} ₽\n\n"
+                f"💰 Цена: {formatted_price} ₽\n\n"
             )
 
-        message_text += f"📊 <b>Общая стоимость: {rounded_total} ₽</b>\n\n"
+        formatted_total = f"{rounded_total:,.0f}".replace(',', ' ')
+        message_text += f"📊 <b>Общая стоимость: {formatted_total} ₽</b>\n\n"
         message_text += (
             "💬 <b>Выберите менеджера для консультации:</b>"
         )
@@ -1168,6 +1170,12 @@ HTML_TEMPLATE = """
             font-weight: 800;
             color: #667eea;
             letter-spacing: -0.5px;
+        }
+        .price-delivery-hint {
+            font-size: 10px;
+            font-weight: 400;
+            color: #999;
+            letter-spacing: 0;
         }
 
         .product-quantity {
@@ -1743,6 +1751,11 @@ HTML_TEMPLATE = """
         let currentBrand = null;  // Текущий выбранный бренд
         let selectedSizes = new Set();  // Выбранные размеры для фильтра
 
+        // Форматирование цены с пробелами (22000 → 22 000)
+        function formatPrice(price) {
+            return (Math.ceil(price / 100) * 100).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        }
+
         // Инициализация particles при загрузке
         createParticles();
         let currentProduct = null;  // Текущий товар в модальном окне
@@ -1795,7 +1808,7 @@ HTML_TEMPLATE = """
             }
 
             modalTitle.textContent = currentProduct.name;
-            modalPrice.textContent = Math.ceil(currentProduct.price / 100) * 100 + ' ₽';
+            modalPrice.textContent = formatPrice(currentProduct.price) + ' ₽';
 
             // Показываем размеры, если они есть
             if (currentProduct.sizes && currentProduct.sizes.length > 0) {
@@ -1915,7 +1928,7 @@ HTML_TEMPLATE = """
                     ${quantity > 0 ? '<div class="product-badge">⭐ Интересно</div>' : ''}
                     <div class="product-image">${imageHtml}</div>
                     <div class="product-name">${product.name}</div>
-                    <div class="product-price">${Math.ceil(product.price / 100) * 100} ₽</div>
+                    <div class="product-price">${formatPrice(product.price)} ₽ <span class="price-delivery-hint">с доставкой</span></div>
                 `;
 
                 // При клике открываем модальное окно
@@ -2234,7 +2247,7 @@ HTML_TEMPLATE = """
             if (totalItems > 0) {
                 footer.classList.add('visible');
                 cartCount.textContent = totalItems;
-                cartTotal.textContent = Math.ceil(totalPrice / 100) * 100;
+                cartTotal.textContent = formatPrice(totalPrice);
             } else {
                 footer.classList.remove('visible');
             }
@@ -2278,9 +2291,9 @@ HTML_TEMPLATE = """
             // Формируем текст для отправки менеджеру
             let messageText = 'Здравствуйте, подскажите о наличии товара:\\n\\n';
             data.items.forEach(item => {
-                messageText += `• ${item.name} — ${Math.ceil(item.price / 100) * 100} ₽\\n`;
+                messageText += `• ${item.name} — ${formatPrice(item.price)} ₽\\n`;
             });
-            messageText += `\\n💰 Общая стоимость: ${Math.ceil(data.total / 100) * 100} ₽`;
+            messageText += `\\n💰 Общая стоимость: ${formatPrice(data.total)} ₽`;
 
             // Случайно выбираем менеджера
             const managers = ['AlexeyBakaev', 'musyanya'];
