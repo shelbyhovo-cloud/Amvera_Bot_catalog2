@@ -157,6 +157,7 @@ def start_serveo(port):
 import asyncio
 import json
 import logging
+import math
 from urllib.parse import quote
 from aiohttp import web
 
@@ -587,11 +588,11 @@ async def handle_web_app_data(message: types.Message):
         # Формируем список товаров для сообщения менеджеру
         products_list = ""
         for item in items:
-            rounded_price = round(item['price'] / 100) * 100
+            rounded_price = math.ceil(item['price'] / 100) * 100
             products_list += f"• {item['name']} — {rounded_price} ₽\n"
 
         # Формируем текст для предзаполнения в личке
-        rounded_total = round(total / 100) * 100
+        rounded_total = math.ceil(total / 100) * 100
         prefilled_text = f"Здравствуйте, подскажите о наличии товара:\n\n{products_list}\n💰 Общая стоимость: {rounded_total} ₽"
         encoded_text = quote(prefilled_text)
 
@@ -599,7 +600,7 @@ async def handle_web_app_data(message: types.Message):
         message_text = "⭐ <b>Вас заинтересовали следующие товары:</b>\n\n"
 
         for item in items:
-            rounded_price = round(item['price'] / 100) * 100
+            rounded_price = math.ceil(item['price'] / 100) * 100
             message_text += (
                 f"<b>{item['name']}</b>\n"
                 f"💰 Цена: {rounded_price} ₽\n\n"
@@ -760,6 +761,62 @@ HTML_TEMPLATE = """
             font-weight: 600;
             text-shadow: 0 2px 10px rgba(255,255,255,0.5);
             letter-spacing: 2px;
+        }
+
+        .categories-container {
+            margin: 24px auto 16px;
+            max-width: 100%;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .categories-tabs {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 0 20px 12px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(102, 126, 234, 0.3) transparent;
+        }
+
+        .categories-tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .categories-tabs::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .categories-tabs::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.3);
+            border-radius: 2px;
+        }
+
+        .category-tab {
+            flex-shrink: 0;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            color: #2d3748;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            white-space: nowrap;
+        }
+
+        .category-tab:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .category-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
         .search-container {
@@ -1408,6 +1465,10 @@ HTML_TEMPLATE = """
         <p class="subtitle">Твой спорт • Твоя победа • Твой успех</p>
     </div>
 
+    <div class="categories-container">
+        <div class="categories-tabs" id="categoriesTabs"></div>
+    </div>
+
     <div class="search-container">
         <div class="search-wrapper">
             <span class="search-icon">🔍</span>
@@ -1480,6 +1541,7 @@ HTML_TEMPLATE = """
 
         let cart = {};  // Теперь это список интересных товаров
         let products = [];
+        let currentCategory = null;  // Текущая выбранная категория
 
         // Инициализация particles при загрузке
         createParticles();
@@ -1490,6 +1552,7 @@ HTML_TEMPLATE = """
             .then(res => res.json())
             .then(data => {
                 products = data;
+                renderCategories();
                 renderProducts();
             });
 
@@ -1532,7 +1595,7 @@ HTML_TEMPLATE = """
             }
 
             modalTitle.textContent = currentProduct.name;
-            modalPrice.textContent = Math.round(currentProduct.price / 100) * 100 + ' ₽';
+            modalPrice.textContent = Math.ceil(currentProduct.price / 100) * 100 + ' ₽';
 
             // Показываем размеры, если они есть
             if (currentProduct.sizes && currentProduct.sizes.length > 0) {
@@ -1588,8 +1651,14 @@ HTML_TEMPLATE = """
             const grid = document.getElementById('productsGrid');
             grid.innerHTML = '';
 
-            // Фильтруем товары по поисковому запросу
+            // Фильтруем товары по категории и поисковому запросу
             const filteredProducts = products.filter(product => {
+                // Фильтр по категории
+                if (currentCategory && product.category !== currentCategory) {
+                    return false;
+                }
+
+                // Фильтр по поисковому запросу
                 if (!searchQuery) return true;
                 const query = searchQuery.toLowerCase();
                 return product.name.toLowerCase().includes(query);
@@ -1630,7 +1699,7 @@ HTML_TEMPLATE = """
                     ${quantity > 0 ? '<div class="product-badge">⭐ Интересно</div>' : ''}
                     <div class="product-image">${imageHtml}</div>
                     <div class="product-name">${product.name}</div>
-                    <div class="product-price">${Math.round(product.price / 100) * 100} ₽</div>
+                    <div class="product-price">${Math.ceil(product.price / 100) * 100} ₽</div>
                 `;
 
                 // При клике открываем модальное окно
@@ -1661,6 +1730,50 @@ HTML_TEMPLATE = """
             }, 50);
 
             updateCartFooter();
+        }
+
+        // Рендеринг вкладок категорий
+        function renderCategories() {
+            const categoriesContainer = document.getElementById('categoriesTabs');
+            categoriesContainer.innerHTML = '';
+
+            // Получаем уникальные категории
+            const categories = [...new Set(products.map(p => p.category).filter(c => c))];
+
+            // Если нет категорий, не показываем вкладки
+            if (categories.length === 0) return;
+
+            // Добавляем вкладку "Все"
+            const allTab = document.createElement('button');
+            allTab.className = 'category-tab' + (!currentCategory ? ' active' : '');
+            allTab.textContent = 'Все';
+            allTab.onclick = () => {
+                // Если уже выбрана "Все", ничего не делаем
+                if (!currentCategory) return;
+
+                currentCategory = null;
+                renderCategories();
+                renderProducts(searchInput.value);
+            };
+            categoriesContainer.appendChild(allTab);
+
+            // Добавляем вкладки для каждой категории
+            categories.sort().forEach(category => {
+                const tab = document.createElement('button');
+                tab.className = 'category-tab' + (currentCategory === category ? ' active' : '');
+                tab.textContent = category;
+                tab.onclick = () => {
+                    // Если уже выбрана эта категория, сбрасываем фильтр
+                    if (currentCategory === category) {
+                        currentCategory = null;
+                    } else {
+                        currentCategory = category;
+                    }
+                    renderCategories();
+                    renderProducts(searchInput.value);
+                };
+                categoriesContainer.appendChild(tab);
+            });
         }
 
         function changeQuantity(productId, delta) {
@@ -1697,7 +1810,7 @@ HTML_TEMPLATE = """
             if (totalItems > 0) {
                 footer.classList.add('visible');
                 cartCount.textContent = totalItems;
-                cartTotal.textContent = Math.round(totalPrice / 100) * 100;
+                cartTotal.textContent = Math.ceil(totalPrice / 100) * 100;
             } else {
                 footer.classList.remove('visible');
             }
@@ -1741,9 +1854,9 @@ HTML_TEMPLATE = """
             // Формируем текст для отправки менеджеру
             let messageText = 'Здравствуйте, подскажите о наличии товара:\\n\\n';
             data.items.forEach(item => {
-                messageText += `• ${item.name} — ${Math.round(item.price / 100) * 100} ₽\\n`;
+                messageText += `• ${item.name} — ${Math.ceil(item.price / 100) * 100} ₽\\n`;
             });
-            messageText += `\\n💰 Общая стоимость: ${Math.round(data.total / 100) * 100} ₽`;
+            messageText += `\\n💰 Общая стоимость: ${Math.ceil(data.total / 100) * 100} ₽`;
 
             // Случайно выбираем менеджера
             const managers = ['AlexeyBakaev', 'musyanya'];
