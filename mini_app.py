@@ -704,7 +704,7 @@ HTML_TEMPLATE = """
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: linear-gradient(-45deg, #f5f7fa, #e9ecef, #dee2e6, #f8f9fa);
+            background: linear-gradient(-45deg, #e2e6ea, #d6dae0, #caced4, #dfe3e7);
             background-size: 400% 400%;
             animation: gradientShift 15s ease infinite;
             color: #1a1a1a;
@@ -1229,7 +1229,7 @@ HTML_TEMPLATE = """
             text-align: center;
             font-weight: 600;
             font-size: 14px;
-            color: var(--tg-theme-text-color, #212529);
+            color: #212529;
             transition: all 0.3s ease;
         }
 
