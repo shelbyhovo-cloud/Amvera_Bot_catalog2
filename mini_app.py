@@ -315,10 +315,22 @@ def load_products_from_excel(file_path=None):
     """Загружает товары из Excel файла."""
     global PRODUCTS
 
-    # Если путь не указан, ищем в папке со скриптом
+    # Если путь не указан, ищем сначала в /data (Amvera), потом локально
     if file_path is None:
-        script_dir = Path(__file__).parent
-        file_path = script_dir / "products_links.xlsx"
+        # Проверяем /data/products_links.xlsx (persistenceMount на Amvera)
+        data_path = Path('/data')
+        if data_path.exists() and data_path.is_dir():
+            data_excel = data_path / "products_links.xlsx"
+            if data_excel.exists():
+                file_path = data_excel
+            else:
+                # Fallback: папка со скриптом
+                script_dir = Path(__file__).parent
+                file_path = script_dir / "products_links.xlsx"
+        else:
+            # Локальная разработка
+            script_dir = Path(__file__).parent
+            file_path = script_dir / "products_links.xlsx"
     else:
         file_path = Path(file_path)
 
@@ -536,9 +548,16 @@ async def handle_document(message: types.Message):
     try:
         await message.answer("📥 Скачиваю архив...")
 
-        # Скачиваем файл
-        script_dir = Path(__file__).parent
-        archive_path = script_dir / document.file_name
+        # Определяем где сохранять файлы (приоритет /data для Amvera)
+        data_path = Path('/data')
+        if data_path.exists() and data_path.is_dir():
+            # На Amvera - сохраняем в /data (persistenceMount)
+            extract_dir = data_path
+        else:
+            # Локально - сохраняем в папку со скриптом
+            extract_dir = Path(__file__).parent
+
+        archive_path = extract_dir / document.file_name
 
         await bot.download(document, destination=archive_path)
         await message.answer("✅ Архив скачан, распаковываю...")
@@ -546,7 +565,7 @@ async def handle_document(message: types.Message):
         # Распаковываем ZIP
         import zipfile
         with zipfile.ZipFile(archive_path, 'r') as zip_ref:
-            zip_ref.extractall(script_dir)
+            zip_ref.extractall(extract_dir)
 
         # Удаляем архив
         archive_path.unlink()
