@@ -877,9 +877,13 @@ HTML_TEMPLATE = """
 
         .subcategories-tabs {
             display: flex;
-            justify-content: center;
             gap: 8px;
             padding: 0 20px 10px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .subcategories-tabs::-webkit-scrollbar {
+            display: none;
         }
 
         .subcategory-tab {
@@ -964,8 +968,9 @@ HTML_TEMPLATE = """
             margin-top: 8px;
         }
         .size-filter-container.visible {
-            max-height: 300px;
+            max-height: 200px;
             opacity: 1;
+            overflow-y: auto;
         }
         .size-filter-header {
             display: flex;
@@ -1021,6 +1026,11 @@ HTML_TEMPLATE = """
             justify-content: center;
             margin-top: 10px;
             padding: 0 4px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .gender-filter-container::-webkit-scrollbar {
+            display: none;
         }
         .gender-tab {
             flex-shrink: 0;
@@ -1698,6 +1708,27 @@ HTML_TEMPLATE = """
             box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
         }
 
+        .gender-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .gender-badge.male {
+            background: rgba(66, 133, 244, 0.15);
+            color: #4285f4;
+        }
+        .gender-badge.female {
+            background: rgba(234, 67, 149, 0.15);
+            color: #ea4395;
+        }
+        .gender-badge.unisex {
+            background: rgba(102, 126, 234, 0.15);
+            color: #667eea;
+        }
+
     </style>
 </head>
 <body>
@@ -1764,6 +1795,10 @@ HTML_TEMPLATE = """
                 <div class="modal-price-section">
                     <span class="modal-price-label">Цена</span>
                     <span class="modal-price" id="modalPrice"></span>
+                </div>
+
+                <div id="modalGenderSection" style="display: none; margin-bottom: 12px;">
+                    <span id="modalGenderBadge"></span>
                 </div>
 
                 <div class="sizes-section" id="sizesSection" style="display: none;">
@@ -1863,6 +1898,21 @@ HTML_TEMPLATE = """
 
             modalTitle.textContent = currentProduct.name;
             modalPrice.textContent = formatPrice(currentProduct.price) + ' ₽';
+
+            // Показываем пол, если указан
+            const genderSection = document.getElementById('modalGenderSection');
+            const genderBadge = document.getElementById('modalGenderBadge');
+            if (currentProduct.gender) {
+                const gl = currentProduct.gender.toLowerCase();
+                let genderClass = 'unisex';
+                if (gl.includes('мужск') || gl.includes('male') || gl.includes('man') || gl.includes('men')) genderClass = 'male';
+                else if (gl.includes('женск') || gl.includes('female') || gl.includes('woman') || gl.includes('women')) genderClass = 'female';
+                genderBadge.className = 'gender-badge ' + genderClass;
+                genderBadge.textContent = currentProduct.gender;
+                genderSection.style.display = 'block';
+            } else {
+                genderSection.style.display = 'none';
+            }
 
             // Показываем размеры, если они есть
             if (currentProduct.sizes && currentProduct.sizes.length > 0) {
@@ -1983,12 +2033,23 @@ HTML_TEMPLATE = """
                     imageHtml = `<div>${product.image}</div>`;
                 }
 
+                // Определяем класс пола
+                let genderBadgeHtml = '';
+                if (product.gender) {
+                    const gl = product.gender.toLowerCase();
+                    let genderClass = 'unisex';
+                    if (gl.includes('мужск') || gl.includes('male') || gl.includes('man') || gl.includes('men')) genderClass = 'male';
+                    else if (gl.includes('женск') || gl.includes('female') || gl.includes('woman') || gl.includes('women')) genderClass = 'female';
+                    genderBadgeHtml = `<div class="gender-badge ${genderClass}">${product.gender}</div>`;
+                }
+
                 card.innerHTML = `
                     ${quantity > 0 ? '<div class="product-badge">⭐ Интересно</div>' : ''}
                     ${product.priority === 1 ? '<div class="priority-badge hot">Hot</div>' : product.priority === 2 ? '<div class="priority-badge new">New</div>' : ''}
                     <div class="product-image">${imageHtml}</div>
                     <div class="product-name">${product.name}</div>
                     <div class="product-price">${formatPrice(product.price)} ₽ <span class="price-delivery-hint">с доставкой</span></div>
+                    ${genderBadgeHtml}
                 `;
 
                 // При клике открываем модальное окно
