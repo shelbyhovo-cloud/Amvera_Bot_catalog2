@@ -587,7 +587,7 @@ async def handle_web_app_data(message: types.Message):
         # Формируем список товаров для сообщения менеджеру
         products_list = ""
         for item in items:
-            products_list += f"• {item['name']} — {item['price']} ₽\n"
+            products_list += f"• {item['name']} — {item['price']:.2f} ₽\n"
 
         # Формируем текст для предзаполнения в личке
         prefilled_text = f"Здравствуйте, подскажите о наличии товара:\n\n{products_list}\n💰 Общая стоимость: {total} ₽"
@@ -599,7 +599,7 @@ async def handle_web_app_data(message: types.Message):
         for item in items:
             message_text += (
                 f"<b>{item['name']}</b>\n"
-                f"💰 Цена: {item['price']} ₽\n\n"
+                f"💰 Цена: {item['price']:.2f} ₽\n\n"
             )
 
         message_text += f"📊 <b>Общая стоимость: {total} ₽</b>\n\n"
@@ -1529,7 +1529,7 @@ HTML_TEMPLATE = """
             }
 
             modalTitle.textContent = currentProduct.name;
-            modalPrice.textContent = currentProduct.price + ' ₽';
+            modalPrice.textContent = currentProduct.price.toFixed(2) + ' ₽';
 
             // Показываем размеры, если они есть
             if (currentProduct.sizes && currentProduct.sizes.length > 0) {
@@ -1627,7 +1627,7 @@ HTML_TEMPLATE = """
                     ${quantity > 0 ? '<div class="product-badge">⭐ Интересно</div>' : ''}
                     <div class="product-image">${imageHtml}</div>
                     <div class="product-name">${product.name}</div>
-                    <div class="product-price">${product.price} ₽</div>
+                    <div class="product-price">${product.price.toFixed(2)} ₽</div>
                 `;
 
                 // При клике открываем модальное окно
@@ -1738,9 +1738,9 @@ HTML_TEMPLATE = """
             // Формируем текст для отправки менеджеру
             let messageText = 'Здравствуйте, подскажите о наличии товара:\\n\\n';
             data.items.forEach(item => {
-                messageText += `• ${item.name} — ${item.price} ₽\\n`;
+                messageText += `• ${item.name} — ${item.price.toFixed(2)} ₽\\n`;
             });
-            messageText += `\\n💰 Общая стоимость: ${data.total} ₽`;
+            messageText += `\\n💰 Общая стоимость: ${data.total.toFixed(2)} ₽`;
 
             // Случайно выбираем менеджера
             const managers = ['AlexeyBakaev', 'musyanya'];
