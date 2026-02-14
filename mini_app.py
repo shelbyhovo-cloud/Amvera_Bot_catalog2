@@ -369,6 +369,8 @@ def load_products_from_excel(file_path=None):
             subcategory = ws_data.cell(row_num, 5).value       # E: Подгруппа
             product_category = ws_data.cell(row_num, 6).value  # F: Категория товара
             brand = ws_data.cell(row_num, 20).value            # T: Бренд
+            gender = ws_data.cell(row_num, 21).value           # U: Пол
+            balance = ws_data.cell(row_num, 22).value          # V: Баланс
             image_urls = ws_data.cell(row_num, 7).value        # G: URL фото
             local_images = ws_data.cell(row_num, 8).value      # H: Локальное фото
             sizes = ws_data.cell(row_num, 9).value             # I: Размеры
@@ -427,6 +429,8 @@ def load_products_from_excel(file_path=None):
                 "subcategory": subcategory or "",
                 "product_category": product_category or "",
                 "brand": brand or "",
+                "gender": gender or "",
+                "balance": balance or "",
             })
 
         wb_data.close()
@@ -1003,6 +1007,46 @@ HTML_TEMPLATE = """
             background: #2d3748;
             color: white;
             border-color: #2d3748;
+        }
+
+        /* Фильтр по полу */
+        .gender-filter-container {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 10px;
+            padding: 0 4px;
+        }
+        .gender-tab {
+            flex-shrink: 0;
+            padding: 5px 14px;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 14px;
+            background: rgba(255,255,255,0.5);
+            font-size: 12px;
+            font-weight: 500;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .gender-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* Бейдж баланса на карточке */
+        .balance-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            z-index: 10;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
         }
 
         .search-container {
@@ -1672,6 +1716,7 @@ HTML_TEMPLATE = """
             </div>
             <div class="size-filter-grid" id="sizeFilterGrid"></div>
         </div>
+        <div class="gender-filter-container" id="genderFilterContainer"></div>
     </div>
 
     <div class="search-container">
@@ -1750,6 +1795,7 @@ HTML_TEMPLATE = """
         let currentSubcategory = null;  // Текущая выбранная подгруппа
         let currentBrand = null;  // Текущий выбранный бренд
         let selectedSizes = new Set();  // Выбранные размеры для фильтра
+        let currentGender = null;  // Текущий выбранный пол
 
         // Форматирование цены с пробелами (22000 → 22 000)
         function formatPrice(price) {
@@ -1886,6 +1932,10 @@ HTML_TEMPLATE = """
                 if (selectedSizes.size > 0 && (!product.sizes || product.sizes.length === 0)) {
                     return false;
                 }
+                // Фильтр по полу
+                if (currentGender && product.gender !== currentGender) {
+                    return false;
+                }
 
                 // Фильтр по поисковому запросу
                 if (!searchQuery) return true;
@@ -1926,6 +1976,7 @@ HTML_TEMPLATE = """
 
                 card.innerHTML = `
                     ${quantity > 0 ? '<div class="product-badge">⭐ Интересно</div>' : ''}
+                    ${product.balance ? `<div class="balance-badge">${product.balance}</div>` : ''}
                     <div class="product-image">${imageHtml}</div>
                     <div class="product-name">${product.name}</div>
                     <div class="product-price">${formatPrice(product.price)} ₽ <span class="price-delivery-hint">с доставкой</span></div>
@@ -1990,6 +2041,7 @@ HTML_TEMPLATE = """
                 currentSubcategory = null;
                 currentBrand = null;
                 selectedSizes.clear();
+                currentGender = null;
                 renderCategories();
                 renderSubcategories();
                 renderBrands();
@@ -2012,6 +2064,7 @@ HTML_TEMPLATE = """
                     }
                     currentBrand = null;
                     selectedSizes.clear();
+                currentGender = null;
                     renderCategories();
                     renderSubcategories();
                     renderBrands();
@@ -2062,6 +2115,7 @@ HTML_TEMPLATE = """
                 currentSubcategory = null;
                 currentBrand = null;
                 selectedSizes.clear();
+                currentGender = null;
                 renderSubcategories();
                 renderBrands();
                 renderProducts(searchInput.value);
@@ -2081,6 +2135,7 @@ HTML_TEMPLATE = """
                     }
                     currentBrand = null;
                     selectedSizes.clear();
+                currentGender = null;
                     renderSubcategories();
                     renderBrands();
                     renderProducts(searchInput.value);
@@ -2122,6 +2177,7 @@ HTML_TEMPLATE = """
                 if (!currentBrand) return;
                 currentBrand = null;
                 selectedSizes.clear();
+                currentGender = null;
                 renderBrands();
                 renderSizeFilter();
                 renderProducts(searchInput.value);
@@ -2142,6 +2198,7 @@ HTML_TEMPLATE = """
                         currentBrand = brand;
                     }
                     selectedSizes.clear();
+                currentGender = null;
                     renderBrands();
                     renderSizeFilter();
                     renderProducts(searchInput.value);
@@ -2175,6 +2232,8 @@ HTML_TEMPLATE = """
             if (allSizes.size <= 1) {
                 container.classList.remove('visible');
                 selectedSizes.clear();
+                currentGender = null;
+                renderGenderFilter();
                 return;
             }
 
@@ -2192,6 +2251,7 @@ HTML_TEMPLATE = """
             resetBtn.style.display = selectedSizes.size > 0 ? 'block' : 'none';
             resetBtn.onclick = () => {
                 selectedSizes.clear();
+                currentGender = null;
                 renderSizeFilter();
                 renderProducts(searchInput.value);
             };
@@ -2210,6 +2270,53 @@ HTML_TEMPLATE = """
                     renderProducts(searchInput.value);
                 };
                 grid.appendChild(btn);
+            });
+
+            renderGenderFilter();
+        }
+
+        // Рендеринг фильтра по полу
+        function renderGenderFilter() {
+            const container = document.getElementById('genderFilterContainer');
+            container.innerHTML = '';
+
+            // Собираем полы из текущей выборки
+            const filtered = products.filter(p => {
+                if (currentCategory && p.category !== currentCategory) return false;
+                if (currentSubcategory && p.subcategory !== currentSubcategory) return false;
+                if (currentBrand && p.brand !== currentBrand) return false;
+                return true;
+            });
+
+            const genders = [...new Set(filtered.map(p => p.gender).filter(g => g && g.trim()))];
+
+            if (genders.length <= 1) {
+                currentGender = null;
+                return;
+            }
+
+            // Вкладка "Все"
+            const allTab = document.createElement('button');
+            allTab.className = 'gender-tab' + (!currentGender ? ' active' : '');
+            allTab.textContent = 'Все';
+            allTab.onclick = () => {
+                if (!currentGender) return;
+                currentGender = null;
+                renderGenderFilter();
+                renderProducts(searchInput.value);
+            };
+            container.appendChild(allTab);
+
+            genders.sort().forEach(g => {
+                const tab = document.createElement('button');
+                tab.className = 'gender-tab' + (currentGender === g ? ' active' : '');
+                tab.textContent = g;
+                tab.onclick = () => {
+                    currentGender = currentGender === g ? null : g;
+                    renderGenderFilter();
+                    renderProducts(searchInput.value);
+                };
+                container.appendChild(tab);
             });
         }
 

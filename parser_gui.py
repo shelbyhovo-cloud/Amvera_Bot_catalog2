@@ -228,6 +228,17 @@ def create_beautiful_template(file_path=None, brands=None):
     brand_cell.border = calc_border
     ws.column_dimensions['T'].width = 18
 
+    # Заголовки "Пол" и "Баланс" в столбцах U(21) и V(22)
+    for col_idx, header_name in [(21, "Пол"), (22, "Баланс")]:
+        cell = ws.cell(1, col_idx)
+        cell.value = header_name
+        cell.fill = PatternFill(start_color="2D3748", end_color="2D3748", fill_type="solid")
+        cell.font = Font(bold=True, color="FFFFFF", size=12, name="Calibri")
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = calc_border
+    ws.column_dimensions['U'].width = 14
+    ws.column_dimensions['V'].width = 18
+
     # ═══════════════════════════════════════════════════════════
     # 📋 ВЫПАДАЮЩИЙ СПИСОК КАТЕГОРИЙ для столбца F
     # ═══════════════════════════════════════════════════════════
@@ -626,6 +637,21 @@ def parse_tradeinn_product(url, script_dir, product_id):
             except:
                 pass
 
+        # Парсим характеристики (Пол, Баланс)
+        gender = ""
+        balance = ""
+        specs_block = re.findall(r'id="js-caracteristicas-cta-info"[^>]*>(.*?)</div>', html, re.DOTALL | re.IGNORECASE)
+        if specs_block:
+            spec_titles = re.findall(r'title="([^"]+)"', specs_block[0])
+            for title in spec_titles:
+                if ': ' in title:
+                    key, value = title.split(': ', 1)
+                    key_lower = key.lower().strip()
+                    if key_lower == 'пол':
+                        gender = value.strip()
+                    elif key_lower in ('баланс', 'balance'):
+                        balance = value.strip()
+
         # Скачиваем только ПЕРВУЮ фотку (экономим место и трафик)
         images_dir = get_images_dir(script_dir)
 
@@ -641,7 +667,9 @@ def parse_tradeinn_product(url, script_dir, product_id):
             "price": price,
             "image_urls": ", ".join(image_urls) if image_urls else "",
             "local_images": ", ".join(local_images) if local_images else "",
-            "sizes": ", ".join(sizes) if sizes else ""
+            "sizes": ", ".join(sizes) if sizes else "",
+            "gender": gender,
+            "balance": balance,
         }, None
 
     except Exception as e:
@@ -1562,6 +1590,8 @@ class ParserApp:
                             detected_brand = brand
                             break
                     ws.cell(row_num, 20).value = detected_brand  # T: Бренд
+                    ws.cell(row_num, 21).value = product_data.get('gender', '')   # U: Пол
+                    ws.cell(row_num, 22).value = product_data.get('balance', '')  # V: Баланс
 
                     # Применяем оформление к ячейкам
                     cell_a = ws.cell(row_num, 1)
@@ -2249,6 +2279,18 @@ class ParserApp:
         brand_cell.border = thin_border
         ws.column_dimensions['T'].width = 18
 
+        # Заголовки "Пол" и "Баланс" в столбцах U(21) и V(22)
+        for col_idx, header_name in [(21, "Пол"), (22, "Баланс")]:
+            if not ws.cell(1, col_idx).value:
+                ws.cell(1, col_idx).value = header_name
+            hcell = ws.cell(1, col_idx)
+            hcell.fill = PatternFill(start_color="2D3748", end_color="2D3748", fill_type="solid")
+            hcell.font = Font(bold=True, color="FFFFFF", size=12, name="Calibri")
+            hcell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            hcell.border = thin_border
+        ws.column_dimensions['U'].width = 14
+        ws.column_dimensions['V'].width = 18
+
         processed_count = 0
 
         # Обходим строки с товарами (начиная со 2-й)
@@ -2508,6 +2550,18 @@ class ParserApp:
             brand_cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             brand_cell.border = thin_border
             ws.column_dimensions['T'].width = 18
+
+            # Заголовки "Пол" и "Баланс" в столбцах U(21) и V(22)
+            for col_idx, header_name in [(21, "Пол"), (22, "Баланс")]:
+                if not ws.cell(1, col_idx).value:
+                    ws.cell(1, col_idx).value = header_name
+                hcell = ws.cell(1, col_idx)
+                hcell.fill = PatternFill(start_color="2D3748", end_color="2D3748", fill_type="solid")
+                hcell.font = Font(bold=True, color="FFFFFF", size=12, name="Calibri")
+                hcell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                hcell.border = thin_border
+            ws.column_dimensions['U'].width = 14
+            ws.column_dimensions['V'].width = 18
 
             processed_count = 0
             skipped_count = 0
