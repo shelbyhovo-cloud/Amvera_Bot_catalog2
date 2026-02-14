@@ -290,22 +290,19 @@ def get_images_dir():
     Определяет путь к папке images в зависимости от окружения.
 
     Приоритет:
-    1. /data/images/ (если существует и НЕ пустая) - постоянное хранилище Amvera
-    2. script_dir/images/ - из репозитория (fallback)
+    1. /data/images/ (если /data существует) - постоянное хранилище Amvera
+    2. script_dir/images/ - локальная разработка (fallback)
     """
-    script_dir = Path(__file__).parent
-
-    # Проверяем /data/images/ на Amvera
+    # Проверяем /data/ на Amvera
     data_path = Path('/data')
     if data_path.exists() and data_path.is_dir():
+        # На Amvera - всегда используем /data/images
         data_images_dir = data_path / 'images'
         data_images_dir.mkdir(exist_ok=True)
+        return data_images_dir
 
-        # Если там уже есть файлы - используем её
-        if any(data_images_dir.iterdir()):
-            return data_images_dir
-
-    # Fallback: локальная папка или images из репозитория
+    # Локальная разработка - используем папку со скриптом
+    script_dir = Path(__file__).parent
     images_dir = script_dir / 'images'
     images_dir.mkdir(exist_ok=True)
     return images_dir
