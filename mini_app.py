@@ -512,9 +512,11 @@ async def cmd_shop(message: types.Message):
     )
 
 
+CHANNEL_USERNAME = "@nimbli_sport"
+
 @dp.message(Command("post"))
 async def cmd_post(message: types.Message):
-    """Команда /post - публикует пост с кнопкой каталога для группы."""
+    """Команда /post - публикует пост в канал. Писать боту в личку."""
     username = message.from_user.username
     if username not in ADMIN_USERNAMES:
         return
@@ -524,27 +526,27 @@ async def cmd_post(message: types.Message):
             [
                 InlineKeyboardButton(
                     text="🛍 Открыть каталог",
-                    web_app=WebAppInfo(url=WEBAPP_URL),
+                    url=f"https://t.me/Catalog_Alex_bot?start=catalog",
                 )
             ]
         ]
     )
-    await message.answer(
-        "<b>NIMBLI</b> | Нишевый спорт из Европы 🏀\n\n"
-        "Падел | Волейбол | Теннис | Бег 🏸🏐🎾\n"
-        "— оригинальные бренды\n"
-        "— прямая поставка из Европы\n"
-        "— цены ниже рынка\n"
-        "— доставка почти до вашей двери 🔥",
-        reply_markup=keyboard,
-        parse_mode="HTML",
-    )
 
-    # Удаляем команду /post чтобы не засорять чат
     try:
-        await message.delete()
-    except:
-        pass
+        await bot.send_message(
+            chat_id=CHANNEL_USERNAME,
+            text="<b>NIMBLI</b> | Нишевый спорт из Европы 🏀\n\n"
+                 "Падел | Волейбол | Теннис | Бег 🏸🏐🎾\n"
+                 "— оригинальные бренды\n"
+                 "— прямая поставка из Европы\n"
+                 "— цены ниже рынка\n"
+                 "— доставка почти до вашей двери 🔥",
+            reply_markup=keyboard,
+            parse_mode="HTML",
+        )
+        await message.answer("✅ Пост опубликован в канал!")
+    except Exception as e:
+        await message.answer(f"❌ Ошибка публикации: {e}")
 
 
 @dp.message(Command("reload"))
