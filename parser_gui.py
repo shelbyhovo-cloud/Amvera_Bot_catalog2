@@ -10,6 +10,7 @@ import sys
 import subprocess
 from pathlib import Path
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import io
 import zipfile
 
@@ -217,6 +218,15 @@ def create_beautiful_template(file_path=None):
         col_letter = cell.column_letter
         ws.column_dimensions[col_letter].width = 18
 
+    # Заголовок "Бренд" в столбце T (20)
+    brand_cell = ws.cell(1, 20)
+    brand_cell.value = "Бренд"
+    brand_cell.fill = PatternFill(start_color="2D3748", end_color="2D3748", fill_type="solid")
+    brand_cell.font = Font(bold=True, color="FFFFFF", size=12, name="Calibri")
+    brand_cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    brand_cell.border = calc_border
+    ws.column_dimensions['T'].width = 18
+
     # ═══════════════════════════════════════════════════════════
     # 📋 ВЫПАДАЮЩИЙ СПИСОК КАТЕГОРИЙ для столбца F
     # ═══════════════════════════════════════════════════════════
@@ -316,10 +326,28 @@ def create_beautiful_template(file_path=None):
         settings_ws[f'A{idx}'].border = calc_border
         settings_ws[f'B{idx}'].border = calc_border
 
+    # Секция БРЕНДЫ (столбец D)
+    settings_ws['D1'] = "🏷️ БРЕНДЫ"
+    settings_ws['D1'].font = Font(bold=True, color="FFFFFF", size=14, name="Calibri")
+    settings_ws['D1'].fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
+
+    settings_ws['D2'] = "Бренд"
+    settings_ws['D2'].font = Font(bold=True, size=11)
+    settings_ws['D2'].fill = PatternFill(start_color="D0D0D0", end_color="D0D0D0", fill_type="solid")
+
+    default_brands = [
+        "Asics", "Adidas", "Bullpadel", "Drop Shot", "Head",
+        "Joma", "Mizuno", "Nike", "Nox", "Oakley", "Puma", "Siux", "Wilson"
+    ]
+    for idx, brand in enumerate(default_brands, start=3):
+        settings_ws[f'D{idx}'] = brand
+        settings_ws[f'D{idx}'].border = calc_border
+
     # Ширина столбцов настроек
     settings_ws.column_dimensions['A'].width = 25
     settings_ws.column_dimensions['B'].width = 20
     settings_ws.column_dimensions['C'].width = 15
+    settings_ws.column_dimensions['D'].width = 20
 
     wb.save(file_path)
     return file_path
@@ -857,6 +885,39 @@ class ParserApp:
         )
         self.archive_btn.pack(side=tk.LEFT, padx=10)
 
+        # Выбор количества потоков
+        threads_frame = tk.Frame(tab_parser, bg="#f5f5f5")
+        threads_frame.pack(pady=5)
+
+        tk.Label(
+            threads_frame,
+            text="⚡ Потоки:",
+            font=("Segoe UI", 11, "bold"),
+            bg="#f5f5f5",
+            fg="#333"
+        ).pack(side=tk.LEFT, padx=(0, 8))
+
+        self.threads_var = tk.IntVar(value=5)
+        self.threads_spinbox = tk.Spinbox(
+            threads_frame,
+            from_=1,
+            to=10,
+            textvariable=self.threads_var,
+            width=3,
+            font=("Segoe UI", 12, "bold"),
+            justify=tk.CENTER,
+            state="readonly"
+        )
+        self.threads_spinbox.pack(side=tk.LEFT)
+
+        tk.Label(
+            threads_frame,
+            text="(1 = медленно, 5 = оптимально, 10 = максимум)",
+            font=("Segoe UI", 9),
+            bg="#f5f5f5",
+            fg="#888"
+        ).pack(side=tk.LEFT, padx=(8, 0))
+
         # Информационная панель
         info_frame = ttk.LabelFrame(tab_parser, text="ℹ️ Информация", padding="10")
         info_frame.pack(fill=tk.X, pady=10)
@@ -1171,9 +1232,14 @@ class ParserApp:
             self.log(f"⚠️ Файл {self.file_path.name} не найден - создай шаблон")
             self.update_status("Создай шаблонный файл для начала работы")
 
-    def log(self, message):
+    def log(self, message, color=None):
         """Добавляет сообщение в лог."""
-        self.log_text.insert(tk.END, message + "\n")
+        if color:
+            tag = f"color_{color}"
+            self.log_text.tag_configure(tag, foreground=color)
+            self.log_text.insert(tk.END, message + "\n", tag)
+        else:
+            self.log_text.insert(tk.END, message + "\n")
         self.log_text.see(tk.END)
         self.root.update()
 
@@ -1323,14 +1389,15 @@ class ParserApp:
         thread.start()
 
     def parse_excel(self):
-        """Парсит товары из Excel."""
+        """Парсит товары из Excel (многопоточно)."""
         # Блокируем кнопки
         self.create_btn.config(state=tk.DISABLED)
         self.parse_btn.config(state=tk.DISABLED)
 
-        self.update_status("🕷️ Парсинг в процессе...")
+        num_threads = self.threads_var.get()
+        self.update_status(f"🕷️ Парсинг в процессе ({num_threads} потоков)...")
         self.log("\n" + "=" * 80)
-        self.log("🕷️ ПАРСИНГ ТОВАРОВ")
+        self.log(f"🕷️ ПАРСИНГ ТОВАРОВ ({num_threads} потоков)")
         self.log("=" * 80)
         self.log("")
 
@@ -1342,42 +1409,97 @@ class ParserApp:
             error_count = 0
             total_rows = ws.max_row - 1  # Минус заголовок
 
+            # ═══════════════════════════════════════════════════════════
+            # 1. Собираем задачи для парсинга
+            # ═══════════════════════════════════════════════════════════
+            tasks = []
             for row_num in range(2, ws.max_row + 1):
                 url = ws.cell(row_num, 1).value
-
                 if not url or not url.startswith("http"):
                     self.log(f"[{row_num - 1}/{total_rows}] ⏭️ Пропущено (нет URL)")
-                    ws.cell(row_num, 11).value = "Пропущено (нет URL)"  # K: Статус
+                    ws.cell(row_num, 11).value = "Пропущено (нет URL)"
                     continue
+                tasks.append((row_num, url, row_num - 1))
 
-                # Обновляем статус
-                self.update_status(f"🕷️ Парсинг товара {row_num - 1}/{total_rows}...")
-                self.log(f"[{row_num - 1}/{total_rows}] 🔍 Парсинг: {url[:60]}...")
+            self.log(f"📋 Найдено {len(tasks)} ссылок для парсинга\n")
 
-                product_id = row_num - 1
-                product_data, error = parse_product(url, self.script_dir, product_id)
+            # ═══════════════════════════════════════════════════════════
+            # 2. Параллельный парсинг через ThreadPoolExecutor
+            # ═══════════════════════════════════════════════════════════
+            results = {}  # {row_num: (product_data, error)}
+            completed = 0
 
+            with ThreadPoolExecutor(max_workers=num_threads) as executor:
+                future_to_row = {
+                    executor.submit(parse_product, url, self.script_dir, pid): (row_num, url, pid)
+                    for row_num, url, pid in tasks
+                }
+
+                for future in as_completed(future_to_row):
+                    row_num, url, pid = future_to_row[future]
+                    completed += 1
+
+                    try:
+                        product_data, error = future.result()
+                        results[row_num] = (product_data, error)
+
+                        if error:
+                            self.log(f"[{completed}/{len(tasks)}] ❌ #{pid}: {error}", color="red")
+                        else:
+                            photos = len(product_data['image_urls'].split(',')) if product_data.get('image_urls') else 0
+                            price = product_data.get('price')
+
+                            if not price or not photos:
+                                missing = []
+                                if not price: missing.append("нет цены")
+                                if not photos: missing.append("нет фото")
+                                self.log(f"[{completed}/{len(tasks)}] ⚠️ #{pid}: {product_data['name']} | {price or '???'}€ | 📷{photos} — {', '.join(missing)}", color="red")
+                            else:
+                                self.log(f"[{completed}/{len(tasks)}] ✅ #{pid}: {product_data['name']} | {price}€ | 📷{photos}")
+                    except Exception as e:
+                        results[row_num] = (None, str(e))
+                        self.log(f"[{completed}/{len(tasks)}] ❌ #{pid}: {e}", color="red")
+
+                    self.update_status(f"🕷️ Парсинг: {completed}/{len(tasks)} ({num_threads} потоков)")
+
+            # ═══════════════════════════════════════════════════════════
+            # 3. Читаем список брендов из настроек
+            # ═══════════════════════════════════════════════════════════
+            brands_list = []
+            if "⚙️ Настройки" in wb.sheetnames:
+                settings_ws = wb["⚙️ Настройки"]
+                for row in range(3, 100):
+                    brand = settings_ws[f'D{row}'].value
+                    if brand and str(brand).strip():
+                        brands_list.append(str(brand).strip())
+                    elif row > 10:
+                        break
+            self.log(f"\n🏷️ Брендов: {len(brands_list)} ({', '.join(brands_list[:5])}{'...' if len(brands_list) > 5 else ''})")
+
+            # ═══════════════════════════════════════════════════════════
+            # 4. Записываем результаты в Excel (последовательно)
+            # ═══════════════════════════════════════════════════════════
+            self.log("📝 Записываю результаты в Excel...")
+
+            data_border = Border(
+                left=Side(style='thin', color='D0D0D0'),
+                right=Side(style='thin', color='D0D0D0'),
+                top=Side(style='thin', color='D0D0D0'),
+                bottom=Side(style='thin', color='D0D0D0')
+            )
+            data_font = Font(size=11, name="Calibri")
+            left_alignment = Alignment(horizontal="left", vertical="center")
+            center_alignment = Alignment(horizontal="center", vertical="center")
+
+            for row_num, (product_data, error) in sorted(results.items()):
                 if error:
-                    self.log(f"    ❌ {error}")
-                    ws.cell(row_num, 11).value = error  # K: Статус
+                    ws.cell(row_num, 11).value = error
                     error_count += 1
                 else:
-                    self.log(f"    ✅ {product_data['name']}")
-                    self.log(f"       💰 Цена: {product_data['price']} €")
-
-                    if product_data.get('image_urls'):
-                        photos_count = len(product_data['image_urls'].split(','))
-                        self.log(f"       📷 Фото: {photos_count} шт.")
-
-                    # ═══════════════════════════════════════════════════════════
-                    # ⚠️ ВАЖНО: Сохраняем вручную заполненные данные!
-                    # Столбцы D, E, F НЕ перезаписываются при повторном парсинге
-                    # ═══════════════════════════════════════════════════════════
-
                     # Проверяем, есть ли вручную заполненные данные
-                    existing_category = ws.cell(row_num, 6).value  # F: Категория товара
+                    existing_category = ws.cell(row_num, 6).value
                     if existing_category:
-                        self.log(f"       📋 Категория сохранена: {existing_category}")
+                        self.log(f"   📋 #{row_num-1}: Категория сохранена: {existing_category}")
 
                     # Обновляем ТОЛЬКО автоматически заполняемые поля
                     ws.cell(row_num, 2).value = product_data['name']           # B: Название
@@ -1391,31 +1513,27 @@ class ParserApp:
                     ws.cell(row_num, 10).value = datetime.now().strftime("%Y-%m-%d %H:%M")  # J: Обновление
                     ws.cell(row_num, 11).value = "✅ Обновлено"                # K: Статус
 
-                    # Применяем оформление к ячейкам
-                    data_border = Border(
-                        left=Side(style='thin', color='D0D0D0'),
-                        right=Side(style='thin', color='D0D0D0'),
-                        top=Side(style='thin', color='D0D0D0'),
-                        bottom=Side(style='thin', color='D0D0D0')
-                    )
-                    data_font = Font(size=11, name="Calibri")
-                    left_alignment = Alignment(horizontal="left", vertical="center")
-                    center_alignment = Alignment(horizontal="center", vertical="center")
+                    # T(20): Бренд — определяем из названия
+                    detected_brand = ""
+                    name_lower = product_data['name'].lower()
+                    for brand in brands_list:
+                        if brand.lower() in name_lower:
+                            detected_brand = brand
+                            break
+                    ws.cell(row_num, 20).value = detected_brand  # T: Бренд
 
-                    # A: URL товара
+                    # Применяем оформление к ячейкам
                     cell_a = ws.cell(row_num, 1)
                     cell_a.border = data_border
                     cell_a.font = data_font
                     cell_a.alignment = left_alignment
 
-                    # B: Название - серая заливка
                     cell_b = ws.cell(row_num, 2)
                     cell_b.border = data_border
                     cell_b.font = data_font
                     cell_b.alignment = left_alignment
                     cell_b.fill = PatternFill(start_color="F0F0F0", end_color="F0F0F0", fill_type="solid")
 
-                    # C: Цена - зелёная заливка, по центру, формат числа
                     cell_c = ws.cell(row_num, 3)
                     cell_c.border = data_border
                     cell_c.font = data_font
@@ -1423,54 +1541,43 @@ class ParserApp:
                     cell_c.number_format = '#,##0.00'
                     cell_c.fill = PatternFill(start_color="E2EFDA", end_color="E2EFDA", fill_type="solid")
 
-                    # D, E, F: Группа, Подгруппа, Категория
                     for col in [4, 5, 6]:
                         cell = ws.cell(row_num, col)
                         cell.border = data_border
                         cell.font = data_font
                         cell.alignment = left_alignment
 
-                    # G: URL фото
                     cell_g = ws.cell(row_num, 7)
                     cell_g.border = data_border
                     cell_g.font = Font(size=9, name="Calibri")
                     cell_g.alignment = left_alignment
 
-                    # H: Локальное фото
                     cell_h = ws.cell(row_num, 8)
                     cell_h.border = data_border
                     cell_h.font = data_font
                     cell_h.alignment = left_alignment
 
-                    # I: Размеры - по центру
                     cell_i = ws.cell(row_num, 9)
                     cell_i.border = data_border
                     cell_i.font = data_font
                     cell_i.alignment = center_alignment
 
-                    # J: Последнее обновление - по центру
                     cell_j = ws.cell(row_num, 10)
                     cell_j.border = data_border
                     cell_j.font = Font(size=10, name="Calibri")
                     cell_j.alignment = center_alignment
 
-                    # K: Статус - по центру
                     cell_k = ws.cell(row_num, 11)
                     cell_k.border = data_border
                     cell_k.font = data_font
                     cell_k.alignment = center_alignment
 
-                    # Применяем границы к расчётным столбцам L-S (12-19)
-                    for col in range(12, 20):  # L(12) до S(19)
+                    for col in range(12, 20):
                         cell = ws.cell(row_num, col)
-                        if cell.value is not None:  # Только если есть данные
+                        if cell.value is not None:
                             cell.border = data_border
 
                     updated_count += 1
-
-                # Задержка
-                import time
-                time.sleep(2)
 
             # ═══════════════════════════════════════════════════════════
             # 📋 ОБНОВЛЯЕМ ВЫПАДАЮЩИЙ СПИСОК КАТЕГОРИЙ
@@ -2000,6 +2107,16 @@ class ParserApp:
             col_letter = header_cell.column_letter
             ws.column_dimensions[col_letter].width = 18
 
+        # Заголовок "Бренд" в столбце T (20)
+        if not ws.cell(1, 20).value:
+            ws.cell(1, 20).value = "Бренд"
+        brand_cell = ws.cell(1, 20)
+        brand_cell.fill = PatternFill(start_color="2D3748", end_color="2D3748", fill_type="solid")
+        brand_cell.font = Font(bold=True, color="FFFFFF", size=12, name="Calibri")
+        brand_cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        brand_cell.border = thin_border
+        ws.column_dimensions['T'].width = 18
+
         processed_count = 0
 
         # Обходим строки с товарами (начиная со 2-й)
@@ -2235,6 +2352,16 @@ class ParserApp:
                 # Устанавливаем ширину столбцов
                 col_letter = header_cell.column_letter
                 ws.column_dimensions[col_letter].width = 18
+
+            # Заголовок "Бренд" в столбце T (20)
+            if not ws.cell(1, 20).value:
+                ws.cell(1, 20).value = "Бренд"
+            brand_cell = ws.cell(1, 20)
+            brand_cell.fill = PatternFill(start_color="2D3748", end_color="2D3748", fill_type="solid")
+            brand_cell.font = Font(bold=True, color="FFFFFF", size=12, name="Calibri")
+            brand_cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            brand_cell.border = thin_border
+            ws.column_dimensions['T'].width = 18
 
             processed_count = 0
             skipped_count = 0

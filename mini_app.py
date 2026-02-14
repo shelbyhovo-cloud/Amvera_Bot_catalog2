@@ -364,6 +364,7 @@ def load_products_from_excel(file_path=None):
             category = ws.cell(row_num, 4).value      # D: Группа
             subcategory = ws.cell(row_num, 5).value       # E: Подгруппа
             product_category = ws.cell(row_num, 6).value  # F: Категория товара
+            brand = ws.cell(row_num, 20).value            # T: Бренд
             image_urls = ws.cell(row_num, 7).value        # G: URL фото
             local_images = ws.cell(row_num, 8).value      # H: Локальное фото
             sizes = ws.cell(row_num, 9).value             # I: Размеры
@@ -409,11 +410,12 @@ def load_products_from_excel(file_path=None):
                 "name": name,
                 "price": int(price) if price else 0,
                 "image": image_to_use,
-                "images": all_images if all_images else [image_to_use],  # Массив всех фото
-                "sizes": sizes_array,  # Массив размеров
+                "images": all_images if all_images else [image_to_use],
+                "sizes": sizes_array,
                 "category": category or "",
                 "subcategory": subcategory or "",
-                "product_category": product_category or "",  # Категория товара для управления ценами
+                "product_category": product_category or "",
+                "brand": brand or "",
             })
 
         if products:
@@ -877,6 +879,55 @@ HTML_TEMPLATE = """
             background: rgba(255, 215, 0, 0.3);
             color: #2d3748;
             border: 1.5px solid rgba(218, 165, 32, 0.5);
+        }
+
+        .brands-container {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .brands-container.visible {
+            max-height: 50px;
+            opacity: 1;
+        }
+
+        .brands-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            padding: 0 20px 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .brands-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .brand-tab {
+            flex-shrink: 0;
+            padding: 5px 12px;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.5);
+            color: #666;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .brand-tab:hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .brand-tab.active {
+            background: #2d3748;
+            color: white;
+            border-color: #2d3748;
         }
 
         .search-container {
@@ -1530,6 +1581,9 @@ HTML_TEMPLATE = """
         <div class="subcategories-container" id="subcategoriesContainer">
             <div class="subcategories-tabs" id="subcategoriesTabs"></div>
         </div>
+        <div class="brands-container" id="brandsContainer">
+            <div class="brands-tabs" id="brandsTabs"></div>
+        </div>
     </div>
 
     <div class="search-container">
@@ -1606,6 +1660,7 @@ HTML_TEMPLATE = """
         let products = [];
         let currentCategory = null;  // Текущая выбранная группа
         let currentSubcategory = null;  // Текущая выбранная подгруппа
+        let currentBrand = null;  // Текущий выбранный бренд
 
         // Инициализация particles при загрузке
         createParticles();
@@ -1725,6 +1780,10 @@ HTML_TEMPLATE = """
                 if (currentSubcategory && product.subcategory !== currentSubcategory) {
                     return false;
                 }
+                // Фильтр по бренду
+                if (currentBrand && product.brand !== currentBrand) {
+                    return false;
+                }
 
                 // Фильтр по поисковому запросу
                 if (!searchQuery) return true;
@@ -1815,6 +1874,7 @@ HTML_TEMPLATE = """
                 allTab.textContent = 'Все';
                 categoriesContainer.appendChild(allTab);
                 renderSubcategories();
+                renderBrands();
                 return;
             }
 
@@ -1826,8 +1886,10 @@ HTML_TEMPLATE = """
                 if (!currentCategory) return;
                 currentCategory = null;
                 currentSubcategory = null;
+                currentBrand = null;
                 renderCategories();
                 renderSubcategories();
+                renderBrands();
                 renderProducts(searchInput.value);
             };
             categoriesContainer.appendChild(allTab);
@@ -1845,14 +1907,17 @@ HTML_TEMPLATE = """
                         currentCategory = category;
                         currentSubcategory = null;
                     }
+                    currentBrand = null;
                     renderCategories();
                     renderSubcategories();
+                    renderBrands();
                     renderProducts(searchInput.value);
                 };
                 categoriesContainer.appendChild(tab);
             });
 
             renderSubcategories();
+            renderBrands();
         }
 
         // Рендеринг подвкладок (подгруппы)
@@ -1891,7 +1956,9 @@ HTML_TEMPLATE = """
             allTab.onclick = () => {
                 if (!currentSubcategory) return;
                 currentSubcategory = null;
+                currentBrand = null;
                 renderSubcategories();
+                renderBrands();
                 renderProducts(searchInput.value);
             };
             tabsContainer.appendChild(allTab);
@@ -1907,7 +1974,65 @@ HTML_TEMPLATE = """
                     } else {
                         currentSubcategory = sub;
                     }
+                    currentBrand = null;
                     renderSubcategories();
+                    renderBrands();
+                    renderProducts(searchInput.value);
+                };
+                tabsContainer.appendChild(tab);
+            });
+        }
+
+        // Рендеринг фильтра по брендам
+        function renderBrands() {
+            const container = document.getElementById('brandsContainer');
+            const tabsContainer = document.getElementById('brandsTabs');
+            tabsContainer.innerHTML = '';
+
+            // Получаем бренды для текущей выборки (с учётом группы и подгруппы)
+            const filteredForBrands = products.filter(p => {
+                if (currentCategory && p.category !== currentCategory) return false;
+                if (currentSubcategory && p.subcategory !== currentSubcategory) return false;
+                return true;
+            });
+
+            const brands = [...new Set(filteredForBrands.map(p => p.brand).filter(b => b && b.trim()))];
+
+            // Если брендов нет или только один — не показываем
+            if (brands.length <= 1) {
+                container.classList.remove('visible');
+                currentBrand = null;
+                return;
+            }
+
+            container.classList.add('visible');
+
+            // Вкладка "Все бренды"
+            const allTab = document.createElement('button');
+            allTab.className = 'brand-tab' + (!currentBrand ? ' active' : '');
+            allTab.textContent = 'Все';
+            allTab.onclick = () => {
+                if (!currentBrand) return;
+                currentBrand = null;
+                renderBrands();
+                renderProducts(searchInput.value);
+            };
+            tabsContainer.appendChild(allTab);
+
+            // Вкладки брендов
+            brands.sort().forEach(brand => {
+                // Считаем количество товаров этого бренда
+                const count = filteredForBrands.filter(p => p.brand === brand).length;
+                const tab = document.createElement('button');
+                tab.className = 'brand-tab' + (currentBrand === brand ? ' active' : '');
+                tab.textContent = `${brand} (${count})`;
+                tab.onclick = () => {
+                    if (currentBrand === brand) {
+                        currentBrand = null;
+                    } else {
+                        currentBrand = brand;
+                    }
+                    renderBrands();
                     renderProducts(searchInput.value);
                 };
                 tabsContainer.appendChild(tab);
