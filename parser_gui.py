@@ -661,9 +661,15 @@ def parse_tradeinn_product(url, script_dir, product_id):
                     elif key_lower in ('баланс', 'balance'):
                         balance = value.strip()
 
-        # Если пол не указан — ставим "Унисекс"
+        # Нормализуем пол
         if not gender:
             gender = "Унисекс"
+        else:
+            gl = gender.lower()
+            if gl in ('девочки', 'девочка', 'девушки', 'девушка'):
+                gender = "Женский"
+            elif gl in ('мальчики', 'мальчик', 'юноши', 'юноша'):
+                gender = "Мужской"
 
         # Скачиваем только ПЕРВУЮ фотку (экономим место и трафик)
         images_dir = get_images_dir(script_dir)
