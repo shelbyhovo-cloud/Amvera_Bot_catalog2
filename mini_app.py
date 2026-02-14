@@ -430,7 +430,7 @@ def load_products_from_excel(file_path=None):
                 "subcategory": subcategory or "",
                 "product_category": product_category or "",
                 "brand": brand or "",
-                "gender": gender or "",
+                "gender": gender or "Унисекс",
                 "balance": balance or "",
                 "priority": int(priority) if priority and isinstance(priority, (int, float)) else 999,
             })

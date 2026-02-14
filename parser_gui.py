@@ -661,6 +661,10 @@ def parse_tradeinn_product(url, script_dir, product_id):
                     elif key_lower in ('баланс', 'balance'):
                         balance = value.strip()
 
+        # Если пол не указан — ставим "Унисекс"
+        if not gender:
+            gender = "Унисекс"
+
         # Скачиваем только ПЕРВУЮ фотку (экономим место и трафик)
         images_dir = get_images_dir(script_dir)
 
