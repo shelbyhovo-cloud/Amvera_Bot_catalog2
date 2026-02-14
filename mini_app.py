@@ -371,6 +371,7 @@ def load_products_from_excel(file_path=None):
             brand = ws_data.cell(row_num, 20).value            # T: Бренд
             gender = ws_data.cell(row_num, 21).value           # U: Пол
             balance = ws_data.cell(row_num, 22).value          # V: Баланс
+            priority = ws_data.cell(row_num, 23).value         # W: Приоритет
             image_urls = ws_data.cell(row_num, 7).value        # G: URL фото
             local_images = ws_data.cell(row_num, 8).value      # H: Локальное фото
             sizes = ws_data.cell(row_num, 9).value             # I: Размеры
@@ -431,10 +432,14 @@ def load_products_from_excel(file_path=None):
                 "brand": brand or "",
                 "gender": gender or "",
                 "balance": balance or "",
+                "priority": int(priority) if priority and isinstance(priority, (int, float)) else 999,
             })
 
         wb_data.close()
         wb_raw.close()
+
+        # Сортируем по приоритету (1 первым, 999 = без приоритета — в конец)
+        products.sort(key=lambda p: p['priority'])
 
         if products:
             PRODUCTS = products
@@ -1036,17 +1041,24 @@ HTML_TEMPLATE = """
         }
 
         /* Бейдж баланса на карточке */
-        .balance-badge {
+        .priority-badge {
             position: absolute;
             top: 8px;
             left: 8px;
             padding: 3px 8px;
             border-radius: 6px;
             font-size: 10px;
-            font-weight: 600;
+            font-weight: 700;
             z-index: 10;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .priority-badge.hot {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+        }
+        .priority-badge.new {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
         .search-container {
@@ -1976,7 +1988,7 @@ HTML_TEMPLATE = """
 
                 card.innerHTML = `
                     ${quantity > 0 ? '<div class="product-badge">⭐ Интересно</div>' : ''}
-                    ${product.balance ? `<div class="balance-badge">${product.balance}</div>` : ''}
+                    ${product.priority === 1 ? '<div class="priority-badge hot">Hot</div>' : product.priority === 2 ? '<div class="priority-badge new">New</div>' : ''}
                     <div class="product-image">${imageHtml}</div>
                     <div class="product-name">${product.name}</div>
                     <div class="product-price">${formatPrice(product.price)} ₽ <span class="price-delivery-hint">с доставкой</span></div>

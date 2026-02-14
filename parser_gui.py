@@ -239,6 +239,15 @@ def create_beautiful_template(file_path=None, brands=None):
     ws.column_dimensions['U'].width = 14
     ws.column_dimensions['V'].width = 18
 
+    # Заголовок "Приоритет" в столбце W(23) — красный, заполняется вручную
+    prio_cell = ws.cell(1, 23)
+    prio_cell.value = "Приоритет"
+    prio_cell.fill = PatternFill(start_color="FF6B6B", end_color="FF6B6B", fill_type="solid")
+    prio_cell.font = Font(bold=True, color="FFFFFF", size=12, name="Calibri")
+    prio_cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    prio_cell.border = calc_border
+    ws.column_dimensions['W'].width = 12
+
     # ═══════════════════════════════════════════════════════════
     # 📋 ВЫПАДАЮЩИЙ СПИСОК КАТЕГОРИЙ для столбца F
     # ═══════════════════════════════════════════════════════════
@@ -2291,6 +2300,16 @@ class ParserApp:
         ws.column_dimensions['U'].width = 14
         ws.column_dimensions['V'].width = 18
 
+        # Заголовок "Приоритет" W(23)
+        if not ws.cell(1, 23).value:
+            ws.cell(1, 23).value = "Приоритет"
+        pcell = ws.cell(1, 23)
+        pcell.fill = PatternFill(start_color="FF6B6B", end_color="FF6B6B", fill_type="solid")
+        pcell.font = Font(bold=True, color="FFFFFF", size=12, name="Calibri")
+        pcell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        pcell.border = thin_border
+        ws.column_dimensions['W'].width = 12
+
         processed_count = 0
 
         # Обходим строки с товарами (начиная со 2-й)
@@ -2562,6 +2581,16 @@ class ParserApp:
                 hcell.border = thin_border
             ws.column_dimensions['U'].width = 14
             ws.column_dimensions['V'].width = 18
+
+            # Заголовок "Приоритет" W(23)
+            if not ws.cell(1, 23).value:
+                ws.cell(1, 23).value = "Приоритет"
+            pcell = ws.cell(1, 23)
+            pcell.fill = PatternFill(start_color="FF6B6B", end_color="FF6B6B", fill_type="solid")
+            pcell.font = Font(bold=True, color="FFFFFF", size=12, name="Calibri")
+            pcell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            pcell.border = thin_border
+            ws.column_dimensions['W'].width = 12
 
             processed_count = 0
             skipped_count = 0
