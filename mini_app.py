@@ -1750,7 +1750,7 @@ HTML_TEMPLATE = """
         </div>
         <div class="size-filter-container" id="sizeFilterContainer">
             <div class="size-filter-header">
-                <span class="size-filter-title">Size</span>
+                <span class="size-filter-title">Размер (EU)</span>
                 <button class="size-filter-reset" id="sizeFilterReset" style="display:none;">Сбросить</button>
             </div>
             <div class="size-filter-grid" id="sizeFilterGrid"></div>
@@ -1802,7 +1802,7 @@ HTML_TEMPLATE = """
                 </div>
 
                 <div class="sizes-section" id="sizesSection" style="display: none;">
-                    <h3 class="sizes-title">👟 Доступные размеры</h3>
+                    <h3 class="sizes-title">👟 Размеры (EU)</h3>
                     <div class="sizes-grid" id="sizesGrid"></div>
                 </div>
 
