@@ -526,7 +526,7 @@ async def cmd_post(message: types.Message):
             [
                 InlineKeyboardButton(
                     text="🛍 Открыть каталог",
-                    web_app=WebAppInfo(url=WEBAPP_URL),
+                    url=WEBAPP_URL,
                 )
             ]
         ]
