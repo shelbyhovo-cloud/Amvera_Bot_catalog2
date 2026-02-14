@@ -1802,15 +1802,18 @@ HTML_TEMPLATE = """
 
         .badge {
             position: absolute;
-            top: 12px;
-            right: 12px;
-            background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #6c5ce7, #a855f7);
             color: white;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 9px;
-            font-weight: 600;
+            padding: 5px 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
             z-index: 2;
+            letter-spacing: 0.3px;
+            box-shadow: 0 2px 8px rgba(108, 92, 231, 0.4);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
         .badge.new {
