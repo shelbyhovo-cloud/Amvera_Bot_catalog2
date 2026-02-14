@@ -790,6 +790,7 @@ HTML_TEMPLATE = """
 
         .categories-tabs {
             display: flex;
+            justify-content: center;
             gap: 10px;
             overflow-x: auto;
             padding: 4px 20px 12px;
