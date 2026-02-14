@@ -2625,9 +2625,15 @@ async def main():
     try:
         if use_webhook:
             # Webhook mode для продакшена (Amvera и др.)
+            webhook_url = f"{WEBAPP_URL}/webhook"
             logger.info("🔗 Режим: WEBHOOK")
-            logger.info(f"📍 Webhook URL: {WEBAPP_URL}/webhook")
-            # Webhook уже установлен через API, просто ждем
+            logger.info(f"📍 Webhook URL: {webhook_url}")
+            # Устанавливаем webhook с поддержкой групповых сообщений
+            await bot.set_webhook(
+                url=webhook_url,
+                allowed_updates=["message", "callback_query", "inline_query", "web_app_data"],
+            )
+            logger.info("✅ Webhook установлен")
             await asyncio.Event().wait()  # Бесконечное ожидание
         else:
             # Polling mode для локальной разработки
