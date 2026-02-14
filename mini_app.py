@@ -587,7 +587,8 @@ async def handle_web_app_data(message: types.Message):
         # Формируем список товаров для сообщения менеджеру
         products_list = ""
         for item in items:
-            products_list += f"• {item['name']} — {item['price']:.2f} ₽\n"
+            rounded_price = round(item['price'] / 100) * 100
+            products_list += f"• {item['name']} — {rounded_price} ₽\n"
 
         # Формируем текст для предзаполнения в личке
         prefilled_text = f"Здравствуйте, подскажите о наличии товара:\n\n{products_list}\n💰 Общая стоимость: {total} ₽"
@@ -597,9 +598,10 @@ async def handle_web_app_data(message: types.Message):
         message_text = "⭐ <b>Вас заинтересовали следующие товары:</b>\n\n"
 
         for item in items:
+            rounded_price = round(item['price'] / 100) * 100
             message_text += (
                 f"<b>{item['name']}</b>\n"
-                f"💰 Цена: {item['price']:.2f} ₽\n\n"
+                f"💰 Цена: {rounded_price} ₽\n\n"
             )
 
         message_text += f"📊 <b>Общая стоимость: {total} ₽</b>\n\n"
@@ -1529,7 +1531,7 @@ HTML_TEMPLATE = """
             }
 
             modalTitle.textContent = currentProduct.name;
-            modalPrice.textContent = currentProduct.price.toFixed(2) + ' ₽';
+            modalPrice.textContent = Math.round(currentProduct.price / 100) * 100 + ' ₽';
 
             // Показываем размеры, если они есть
             if (currentProduct.sizes && currentProduct.sizes.length > 0) {
@@ -1627,7 +1629,7 @@ HTML_TEMPLATE = """
                     ${quantity > 0 ? '<div class="product-badge">⭐ Интересно</div>' : ''}
                     <div class="product-image">${imageHtml}</div>
                     <div class="product-name">${product.name}</div>
-                    <div class="product-price">${product.price.toFixed(2)} ₽</div>
+                    <div class="product-price">${Math.round(product.price / 100) * 100} ₽</div>
                 `;
 
                 // При клике открываем модальное окно
@@ -1738,9 +1740,9 @@ HTML_TEMPLATE = """
             // Формируем текст для отправки менеджеру
             let messageText = 'Здравствуйте, подскажите о наличии товара:\\n\\n';
             data.items.forEach(item => {
-                messageText += `• ${item.name} — ${item.price.toFixed(2)} ₽\\n`;
+                messageText += `• ${item.name} — ${Math.round(item.price / 100) * 100} ₽\\n`;
             });
-            messageText += `\\n💰 Общая стоимость: ${data.total.toFixed(2)} ₽`;
+            messageText += `\\n💰 Общая стоимость: ${Math.round(data.total / 100) * 100} ₽`;
 
             // Случайно выбираем менеджера
             const managers = ['AlexeyBakaev', 'musyanya'];
