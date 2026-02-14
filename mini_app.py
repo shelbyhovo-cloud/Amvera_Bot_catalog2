@@ -836,18 +836,22 @@ HTML_TEMPLATE = """
         }
 
         .product-card {
-            display: flex;
-            align-items: center;
-            background: #252831;
-            height: 180px;
-            border-radius: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 16px;
+            padding: 14px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             position: relative;
             overflow: hidden;
             animation: fadeInUp 0.6s ease-out;
             animation-fill-mode: both;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
         }
 
         .product-card:active {
@@ -855,41 +859,30 @@ HTML_TEMPLATE = """
         }
 
         .product-card.in-cart {
-            box-shadow: 0 4px 16px rgba(255, 109, 57, 0.4);
+            border-color: #667eea;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
         }
 
-        .card-left {
+        .product-image {
+            width: 100%;
             height: 140px;
-            width: 130px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: #ff6d39;
-            margin-left: 8px;
-            border-radius: 0% 50% 50% 0%;
-            position: relative;
-            z-index: 2;
-            flex-shrink: 0;
+            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            overflow: hidden;
         }
 
-        .card-left img {
-            max-width: 90px;
-            max-height: 90px;
+        .product-image img {
+            max-width: 100%;
+            max-height: 120px;
             object-fit: contain;
-            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
         }
 
-        .card-right {
-            flex: 1;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            padding: 0 16px 0 20px;
-            z-index: 1;
-        }
-
-        .product-info {
-            width: 100%;
+        .product-image div {
+            font-size: 56px;
         }
 
         .product-badge {
@@ -913,22 +906,22 @@ HTML_TEMPLATE = """
         }
 
         .product-name {
-            font-weight: 700;
-            font-size: 16px;
+            font-weight: 600;
+            font-size: 14px;
             margin-bottom: 8px;
-            color: #ff6d39;
-            line-height: 1.3;
+            color: #2d3748;
+            line-height: 1.4;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            min-height: 40px;
         }
 
         .product-price {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 800;
-            color: white;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: #667eea;
             letter-spacing: -0.5px;
         }
 
@@ -1623,23 +1616,17 @@ HTML_TEMPLATE = """
                 let imageHtml;
                 if (product.image.startsWith('/images/')) {
                     // Реальная фотография
-                    imageHtml = `<img src="${product.image}" alt="${product.name}" onerror="this.outerHTML='<div style=\\'font-size:48px\\'>📦</div>'">`;
+                    imageHtml = `<img src="${product.image}" alt="${product.name}" onerror="this.outerHTML='<div>📦</div>'">`;
                 } else {
                     // Placeholder эмодзи
-                    imageHtml = `<div style="font-size: 48px;">${product.image}</div>`;
+                    imageHtml = `<div>${product.image}</div>`;
                 }
 
                 card.innerHTML = `
                     ${quantity > 0 ? '<div class="product-badge">⭐ Интересно</div>' : ''}
-                    <div class="card-left">
-                        ${imageHtml}
-                    </div>
-                    <div class="card-right">
-                        <div class="product-info">
-                            <div class="product-name">${product.name}</div>
-                            <div class="product-price">${product.price} ₽</div>
-                        </div>
-                    </div>
+                    <div class="product-image">${imageHtml}</div>
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-price">${product.price} ₽</div>
                 `;
 
                 // При клике открываем модальное окно
