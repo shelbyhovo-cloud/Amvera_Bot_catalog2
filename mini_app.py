@@ -571,7 +571,7 @@ CHANNEL_USERNAME = "@nimbli_sport"
 
 @dp.message(Command("post"))
 async def cmd_post(message: types.Message):
-    """Команда /post - публикует пост в канал. Писать боту в личку."""
+    """Команда /post - в личке публикует в канал, в группе — прямо в группу."""
     username = message.from_user.username
     if username not in ADMIN_USERNAMES:
         return
@@ -587,19 +587,37 @@ async def cmd_post(message: types.Message):
         ]
     )
 
+    post_text = (
+        "<b>NIMBLI</b> | Нишевый спорт из Европы 🏀\n\n"
+        "Падел | Волейбол | Теннис | Бег 🏸🏐🎾\n"
+        "— оригинальные бренды\n"
+        "— прямая поставка из Европы\n"
+        "— цены ниже рынка\n"
+        "— доставка почти до вашей двери 🔥"
+    )
+
     try:
-        await bot.send_message(
-            chat_id=CHANNEL_USERNAME,
-            text="<b>NIMBLI</b> | Нишевый спорт из Европы 🏀\n\n"
-                 "Падел | Волейбол | Теннис | Бег 🏸🏐🎾\n"
-                 "— оригинальные бренды\n"
-                 "— прямая поставка из Европы\n"
-                 "— цены ниже рынка\n"
-                 "— доставка почти до вашей двери 🔥",
-            reply_markup=keyboard,
-            parse_mode="HTML",
-        )
-        await message.answer("✅ Пост опубликован в канал!")
+        if message.chat.type == "private":
+            # Из личных сообщений — публикуем в канал
+            await bot.send_message(
+                chat_id=CHANNEL_USERNAME,
+                text=post_text,
+                reply_markup=keyboard,
+                parse_mode="HTML",
+            )
+            await message.answer("✅ Пост опубликован в канал!")
+        else:
+            # Из группы — публикуем прямо в группу
+            await message.answer(
+                post_text,
+                reply_markup=keyboard,
+                parse_mode="HTML",
+            )
+            # Удаляем команду /post
+            try:
+                await message.delete()
+            except:
+                pass
     except Exception as e:
         await message.answer(f"❌ Ошибка публикации: {e}")
 
