@@ -70,7 +70,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 # 📄 СОЗДАНИЕ КРАСИВОГО ШАБЛОНА EXCEL
 # ═══════════════════════════════════════════════════════════
 
-def create_beautiful_template(file_path=None):
+def create_beautiful_template(file_path=None, brands=None):
     """Создаёт красиво оформленный шаблон Excel."""
 
     if file_path is None:
@@ -335,11 +335,11 @@ def create_beautiful_template(file_path=None):
     settings_ws['D2'].font = Font(bold=True, size=11)
     settings_ws['D2'].fill = PatternFill(start_color="D0D0D0", end_color="D0D0D0", fill_type="solid")
 
-    default_brands = [
+    brands_list = brands or [
         "Asics", "Adidas", "Bullpadel", "Drop Shot", "Head",
         "Joma", "Mizuno", "Nike", "Nox", "Oakley", "Puma", "Siux", "Wilson"
     ]
-    for idx, brand in enumerate(default_brands, start=3):
+    for idx, brand in enumerate(brands_list, start=3):
         settings_ws[f'D{idx}'] = brand
         settings_ws[f'D{idx}'].border = calc_border
 
@@ -1106,6 +1106,39 @@ class ParserApp:
         self.refresh_categories_table()
 
         # ═══════════════════════════════════════════════════════════
+        # 🏷️ БРЕНДЫ
+        # ═══════════════════════════════════════════════════════════
+
+        self.brands_data = [
+            "Asics", "Adidas", "Bullpadel", "Drop Shot", "Head",
+            "Joma", "Mizuno", "Nike", "Nox", "Oakley", "Puma", "Siux", "Wilson"
+        ]
+
+        self.brands_main_frame = ttk.LabelFrame(currency_scrollable_frame, text="🏷️ Бренды (для авто-определения из названий)", padding="15")
+        self.brands_main_frame.pack(fill=tk.X, pady=10)
+
+        self.brands_table_frame = tk.Frame(self.brands_main_frame)
+        self.brands_table_frame.pack(fill=tk.X)
+
+        brands_buttons_frame = tk.Frame(self.brands_main_frame)
+        brands_buttons_frame.pack(fill=tk.X, pady=10)
+
+        add_brand_btn = tk.Button(
+            brands_buttons_frame,
+            text="➕ Добавить бренд",
+            command=self.add_brand_dialog,
+            bg="#2196F3",
+            fg="white",
+            font=("Segoe UI", 9, "bold"),
+            padx=10,
+            pady=5,
+            cursor="hand2"
+        )
+        add_brand_btn.pack(side=tk.LEFT, padx=5)
+
+        self.refresh_brands_table()
+
+        # ═══════════════════════════════════════════════════════════
         # 📊 КОЭФФИЦИЕНТЫ НАЦЕНКИ
         # ═══════════════════════════════════════════════════════════
 
@@ -1266,7 +1299,7 @@ class ParserApp:
                     self.update_status("Отменено")
                     return
 
-            file_path = create_beautiful_template(self.file_path)
+            file_path = create_beautiful_template(self.file_path, brands=self.get_brands_from_ui())
             self.log(f"✅ Шаблон создан: {file_path}")
             self.log("")
             self.log("📝 Следующие шаги:")
@@ -1798,6 +1831,60 @@ class ParserApp:
                 f"✅ Категория '{category_name}' удалена!\n\nНе забудьте нажать '💾 Сохранить изменения'"
             )
 
+    def refresh_brands_table(self):
+        """Перерисовывает таблицу брендов."""
+        for widget in self.brands_table_frame.winfo_children():
+            widget.destroy()
+
+        self.brand_entries = {}
+
+        # Размещаем бренды в 3 колонки
+        for idx, brand in enumerate(self.brands_data):
+            row = idx // 3
+            col = (idx % 3) * 2  # 2 ячейки на бренд (Entry + кнопка)
+
+            entry = tk.Entry(self.brands_table_frame, font=("Segoe UI", 10), width=15)
+            entry.insert(0, brand)
+            entry.grid(row=row, column=col, padx=3, pady=2, sticky=tk.W)
+            self.brand_entries[idx] = entry
+
+            delete_btn = tk.Button(
+                self.brands_table_frame,
+                text="✕",
+                command=lambda i=idx: self.delete_brand(i),
+                bg="#f44336",
+                fg="white",
+                font=("Segoe UI", 8),
+                width=2,
+                cursor="hand2"
+            )
+            delete_btn.grid(row=row, column=col + 1, padx=(0, 10), pady=2)
+
+    def add_brand_dialog(self):
+        """Диалог добавления бренда."""
+        from tkinter import simpledialog
+        brand_name = simpledialog.askstring("Добавить бренд", "Введите название бренда:", parent=self.root)
+        if not brand_name or not brand_name.strip():
+            return
+        self.brands_data.append(brand_name.strip())
+        self.refresh_brands_table()
+
+    def delete_brand(self, index):
+        """Удаляет бренд по индексу."""
+        brand_name = self.brands_data[index]
+        self.brands_data.pop(index)
+        self.refresh_brands_table()
+
+    def get_brands_from_ui(self):
+        """Считывает актуальные бренды из полей ввода."""
+        brands = []
+        for idx, entry in self.brand_entries.items():
+            val = entry.get().strip()
+            if val:
+                brands.append(val)
+        self.brands_data = brands
+        return brands
+
     def save_category_changes(self):
         """Сохраняет изменения категорий и стоимости доставки в Excel."""
         try:
@@ -2252,10 +2339,24 @@ class ParserApp:
             settings_ws[f'A{idx}'].border = thin_border
             settings_ws[f'B{idx}'].border = thin_border
 
+        # Секция БРЕНДЫ (столбец D)
+        settings_ws['D1'] = "🏷️ БРЕНДЫ"
+        settings_ws['D1'].font = Font(bold=True, color="FFFFFF", size=14, name="Calibri")
+        settings_ws['D1'].fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
+
+        settings_ws['D2'] = "Бренд"
+        settings_ws['D2'].font = Font(bold=True, size=11)
+        settings_ws['D2'].fill = PatternFill(start_color="D0D0D0", end_color="D0D0D0", fill_type="solid")
+
+        for idx, brand in enumerate(self.brands_data, start=3):
+            settings_ws[f'D{idx}'] = brand
+            settings_ws[f'D{idx}'].border = thin_border
+
         # Ширина столбцов настроек
         settings_ws.column_dimensions['A'].width = 25
         settings_ws.column_dimensions['B'].width = 20
         settings_ws.column_dimensions['C'].width = 15
+        settings_ws.column_dimensions['D'].width = 20
 
     def apply_formulas_to_excel(self):
         """Применяет все формулы расчета к товарам в Excel."""

@@ -930,6 +930,65 @@ HTML_TEMPLATE = """
             border-color: #2d3748;
         }
 
+        /* Фильтр размеров */
+        .size-filter-container {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.3s ease;
+            opacity: 0;
+            margin-top: 8px;
+        }
+        .size-filter-container.visible {
+            max-height: 300px;
+            opacity: 1;
+        }
+        .size-filter-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 4px;
+            margin-bottom: 8px;
+        }
+        .size-filter-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--tg-theme-hint-color, #999);
+        }
+        .size-filter-reset {
+            font-size: 11px;
+            color: #667eea;
+            cursor: pointer;
+            border: none;
+            background: none;
+            padding: 2px 6px;
+        }
+        .size-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+            gap: 6px;
+            padding: 0 4px;
+        }
+        .size-filter-btn {
+            padding: 7px 4px;
+            border: 1.5px solid rgba(0,0,0,0.12);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.6);
+            font-size: 12px;
+            font-weight: 500;
+            color: #333;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        .size-filter-btn:hover {
+            border-color: rgba(0,0,0,0.25);
+        }
+        .size-filter-btn.active {
+            background: #2d3748;
+            color: white;
+            border-color: #2d3748;
+        }
+
         .search-container {
             margin: 20px auto 24px;
             max-width: 600px;
@@ -1584,6 +1643,13 @@ HTML_TEMPLATE = """
         <div class="brands-container" id="brandsContainer">
             <div class="brands-tabs" id="brandsTabs"></div>
         </div>
+        <div class="size-filter-container" id="sizeFilterContainer">
+            <div class="size-filter-header">
+                <span class="size-filter-title">Size</span>
+                <button class="size-filter-reset" id="sizeFilterReset" style="display:none;">Сбросить</button>
+            </div>
+            <div class="size-filter-grid" id="sizeFilterGrid"></div>
+        </div>
     </div>
 
     <div class="search-container">
@@ -1661,6 +1727,7 @@ HTML_TEMPLATE = """
         let currentCategory = null;  // Текущая выбранная группа
         let currentSubcategory = null;  // Текущая выбранная подгруппа
         let currentBrand = null;  // Текущий выбранный бренд
+        let selectedSizes = new Set();  // Выбранные размеры для фильтра
 
         // Инициализация particles при загрузке
         createParticles();
@@ -1784,6 +1851,14 @@ HTML_TEMPLATE = """
                 if (currentBrand && product.brand !== currentBrand) {
                     return false;
                 }
+                // Фильтр по размерам
+                if (selectedSizes.size > 0 && product.sizes && product.sizes.length > 0) {
+                    const hasSize = product.sizes.some(s => selectedSizes.has(s));
+                    if (!hasSize) return false;
+                }
+                if (selectedSizes.size > 0 && (!product.sizes || product.sizes.length === 0)) {
+                    return false;
+                }
 
                 // Фильтр по поисковому запросу
                 if (!searchQuery) return true;
@@ -1887,6 +1962,7 @@ HTML_TEMPLATE = """
                 currentCategory = null;
                 currentSubcategory = null;
                 currentBrand = null;
+                selectedSizes.clear();
                 renderCategories();
                 renderSubcategories();
                 renderBrands();
@@ -1908,6 +1984,7 @@ HTML_TEMPLATE = """
                         currentSubcategory = null;
                     }
                     currentBrand = null;
+                    selectedSizes.clear();
                     renderCategories();
                     renderSubcategories();
                     renderBrands();
@@ -1957,6 +2034,7 @@ HTML_TEMPLATE = """
                 if (!currentSubcategory) return;
                 currentSubcategory = null;
                 currentBrand = null;
+                selectedSizes.clear();
                 renderSubcategories();
                 renderBrands();
                 renderProducts(searchInput.value);
@@ -1975,6 +2053,7 @@ HTML_TEMPLATE = """
                         currentSubcategory = sub;
                     }
                     currentBrand = null;
+                    selectedSizes.clear();
                     renderSubcategories();
                     renderBrands();
                     renderProducts(searchInput.value);
@@ -2002,6 +2081,7 @@ HTML_TEMPLATE = """
             if (brands.length <= 1) {
                 container.classList.remove('visible');
                 currentBrand = null;
+                renderSizeFilter();
                 return;
             }
 
@@ -2014,7 +2094,9 @@ HTML_TEMPLATE = """
             allTab.onclick = () => {
                 if (!currentBrand) return;
                 currentBrand = null;
+                selectedSizes.clear();
                 renderBrands();
+                renderSizeFilter();
                 renderProducts(searchInput.value);
             };
             tabsContainer.appendChild(allTab);
@@ -2032,10 +2114,75 @@ HTML_TEMPLATE = """
                     } else {
                         currentBrand = brand;
                     }
+                    selectedSizes.clear();
                     renderBrands();
+                    renderSizeFilter();
                     renderProducts(searchInput.value);
                 };
                 tabsContainer.appendChild(tab);
+            });
+
+            renderSizeFilter();
+        }
+
+        // Рендеринг фильтра по размерам
+        function renderSizeFilter() {
+            const container = document.getElementById('sizeFilterContainer');
+            const grid = document.getElementById('sizeFilterGrid');
+            const resetBtn = document.getElementById('sizeFilterReset');
+            grid.innerHTML = '';
+
+            // Собираем все размеры из текущей выборки
+            const filteredForSizes = products.filter(p => {
+                if (currentCategory && p.category !== currentCategory) return false;
+                if (currentSubcategory && p.subcategory !== currentSubcategory) return false;
+                if (currentBrand && p.brand !== currentBrand) return false;
+                return true;
+            });
+
+            const allSizes = new Set();
+            filteredForSizes.forEach(p => {
+                if (p.sizes) p.sizes.forEach(s => allSizes.add(s));
+            });
+
+            if (allSizes.size <= 1) {
+                container.classList.remove('visible');
+                selectedSizes.clear();
+                return;
+            }
+
+            container.classList.add('visible');
+
+            // Сортировка размеров (числовая)
+            const sortedSizes = [...allSizes].sort((a, b) => {
+                const numA = parseFloat(a.replace(/[^\d.,]/g, '').replace(',', '.'));
+                const numB = parseFloat(b.replace(/[^\d.,]/g, '').replace(',', '.'));
+                if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+                return a.localeCompare(b);
+            });
+
+            // Кнопка сброса
+            resetBtn.style.display = selectedSizes.size > 0 ? 'block' : 'none';
+            resetBtn.onclick = () => {
+                selectedSizes.clear();
+                renderSizeFilter();
+                renderProducts(searchInput.value);
+            };
+
+            sortedSizes.forEach(size => {
+                const btn = document.createElement('button');
+                btn.className = 'size-filter-btn' + (selectedSizes.has(size) ? ' active' : '');
+                btn.textContent = size;
+                btn.onclick = () => {
+                    if (selectedSizes.has(size)) {
+                        selectedSizes.delete(size);
+                    } else {
+                        selectedSizes.add(size);
+                    }
+                    renderSizeFilter();
+                    renderProducts(searchInput.value);
+                };
+                grid.appendChild(btn);
             });
         }
 
