@@ -836,6 +836,49 @@ HTML_TEMPLATE = """
             box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5);
         }
 
+        .subcategories-container {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .subcategories-container.visible {
+            max-height: 60px;
+            opacity: 1;
+        }
+
+        .subcategories-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 20px 10px;
+        }
+
+        .subcategory-tab {
+            flex-shrink: 0;
+            padding: 6px 16px;
+            border: none;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.5);
+            color: #555;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .subcategory-tab:hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .subcategory-tab.active {
+            background: rgba(255, 215, 0, 0.3);
+            color: #2d3748;
+            border: 1.5px solid rgba(218, 165, 32, 0.5);
+        }
+
         .search-container {
             margin: 20px auto 24px;
             max-width: 600px;
@@ -1484,6 +1527,9 @@ HTML_TEMPLATE = """
 
     <div class="categories-container">
         <div class="categories-tabs" id="categoriesTabs"></div>
+        <div class="subcategories-container" id="subcategoriesContainer">
+            <div class="subcategories-tabs" id="subcategoriesTabs"></div>
+        </div>
     </div>
 
     <div class="search-container">
@@ -1558,7 +1604,8 @@ HTML_TEMPLATE = """
 
         let cart = {};  // Теперь это список интересных товаров
         let products = [];
-        let currentCategory = null;  // Текущая выбранная категория
+        let currentCategory = null;  // Текущая выбранная группа
+        let currentSubcategory = null;  // Текущая выбранная подгруппа
 
         // Инициализация particles при загрузке
         createParticles();
@@ -1668,10 +1715,14 @@ HTML_TEMPLATE = """
             const grid = document.getElementById('productsGrid');
             grid.innerHTML = '';
 
-            // Фильтруем товары по категории и поисковому запросу
+            // Фильтруем товары по группе, подгруппе и поисковому запросу
             const filteredProducts = products.filter(product => {
-                // Фильтр по категории
+                // Фильтр по группе
                 if (currentCategory && product.category !== currentCategory) {
+                    return false;
+                }
+                // Фильтр по подгруппе
+                if (currentSubcategory && product.subcategory !== currentSubcategory) {
                     return false;
                 }
 
@@ -1749,56 +1800,117 @@ HTML_TEMPLATE = """
             updateCartFooter();
         }
 
-        // Рендеринг вкладок категорий
+        // Рендеринг вкладок категорий (группы)
         function renderCategories() {
             const categoriesContainer = document.getElementById('categoriesTabs');
             categoriesContainer.innerHTML = '';
 
-            // Получаем уникальные категории (отфильтровываем пустые)
             const categories = [...new Set(products.map(p => p.category).filter(c => c && c.trim()))];
 
-            // Если нет товаров, не показываем вкладки
             if (products.length === 0) return;
 
-            // Если категорий нет, показываем только "Все"
             if (categories.length === 0) {
                 const allTab = document.createElement('button');
                 allTab.className = 'category-tab active';
                 allTab.textContent = 'Все';
                 categoriesContainer.appendChild(allTab);
+                renderSubcategories();
                 return;
             }
 
-            // Добавляем вкладку "Все"
+            // Вкладка "Все"
             const allTab = document.createElement('button');
             allTab.className = 'category-tab' + (!currentCategory ? ' active' : '');
             allTab.textContent = 'Все';
             allTab.onclick = () => {
-                // Если уже выбрана "Все", ничего не делаем
                 if (!currentCategory) return;
-
                 currentCategory = null;
+                currentSubcategory = null;
                 renderCategories();
+                renderSubcategories();
                 renderProducts(searchInput.value);
             };
             categoriesContainer.appendChild(allTab);
 
-            // Добавляем вкладки для каждой категории
+            // Вкладки групп
             categories.sort().forEach(category => {
                 const tab = document.createElement('button');
                 tab.className = 'category-tab' + (currentCategory === category ? ' active' : '');
                 tab.textContent = category;
                 tab.onclick = () => {
-                    // Если уже выбрана эта категория, сбрасываем фильтр
                     if (currentCategory === category) {
                         currentCategory = null;
+                        currentSubcategory = null;
                     } else {
                         currentCategory = category;
+                        currentSubcategory = null;
                     }
                     renderCategories();
+                    renderSubcategories();
                     renderProducts(searchInput.value);
                 };
                 categoriesContainer.appendChild(tab);
+            });
+
+            renderSubcategories();
+        }
+
+        // Рендеринг подвкладок (подгруппы)
+        function renderSubcategories() {
+            const container = document.getElementById('subcategoriesContainer');
+            const tabsContainer = document.getElementById('subcategoriesTabs');
+            tabsContainer.innerHTML = '';
+
+            // Если группа не выбрана — скрываем подвкладки
+            if (!currentCategory) {
+                container.classList.remove('visible');
+                return;
+            }
+
+            // Получаем подгруппы для выбранной группы
+            const subcategories = [...new Set(
+                products
+                    .filter(p => p.category === currentCategory)
+                    .map(p => p.subcategory)
+                    .filter(s => s && s.trim())
+            )];
+
+            // Если подгрупп нет или только одна — не показываем
+            if (subcategories.length <= 1) {
+                container.classList.remove('visible');
+                return;
+            }
+
+            // Показываем контейнер
+            container.classList.add('visible');
+
+            // Вкладка "Все" для подгрупп
+            const allTab = document.createElement('button');
+            allTab.className = 'subcategory-tab' + (!currentSubcategory ? ' active' : '');
+            allTab.textContent = 'Все';
+            allTab.onclick = () => {
+                if (!currentSubcategory) return;
+                currentSubcategory = null;
+                renderSubcategories();
+                renderProducts(searchInput.value);
+            };
+            tabsContainer.appendChild(allTab);
+
+            // Вкладки подгрупп
+            subcategories.sort().forEach(sub => {
+                const tab = document.createElement('button');
+                tab.className = 'subcategory-tab' + (currentSubcategory === sub ? ' active' : '');
+                tab.textContent = sub;
+                tab.onclick = () => {
+                    if (currentSubcategory === sub) {
+                        currentSubcategory = null;
+                    } else {
+                        currentSubcategory = sub;
+                    }
+                    renderSubcategories();
+                    renderProducts(searchInput.value);
+                };
+                tabsContainer.appendChild(tab);
             });
         }
 
