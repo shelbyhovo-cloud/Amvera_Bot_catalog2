@@ -1269,6 +1269,10 @@ class ParserApp:
             self.log(f"⚠️ Файл {self.file_path.name} не найден - создай шаблон")
             self.update_status("Создай шаблонный файл для начала работы")
 
+        # Сохраняем настройки при первом запуске (если файла ещё нет)
+        if not self.settings_file.exists():
+            self._save_settings()
+
     def log(self, message, color=None):
         """Добавляет сообщение в лог."""
         if color:
