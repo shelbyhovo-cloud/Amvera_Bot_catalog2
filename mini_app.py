@@ -591,7 +591,8 @@ async def handle_web_app_data(message: types.Message):
             products_list += f"• {item['name']} — {rounded_price} ₽\n"
 
         # Формируем текст для предзаполнения в личке
-        prefilled_text = f"Здравствуйте, подскажите о наличии товара:\n\n{products_list}\n💰 Общая стоимость: {total} ₽"
+        rounded_total = round(total / 100) * 100
+        prefilled_text = f"Здравствуйте, подскажите о наличии товара:\n\n{products_list}\n💰 Общая стоимость: {rounded_total} ₽"
         encoded_text = quote(prefilled_text)
 
         # Показываем сообщение пользователю с выбором менеджера
@@ -604,7 +605,7 @@ async def handle_web_app_data(message: types.Message):
                 f"💰 Цена: {rounded_price} ₽\n\n"
             )
 
-        message_text += f"📊 <b>Общая стоимость: {total} ₽</b>\n\n"
+        message_text += f"📊 <b>Общая стоимость: {rounded_total} ₽</b>\n\n"
         message_text += (
             "💬 <b>Выберите менеджера для консультации:</b>"
         )
@@ -1696,7 +1697,7 @@ HTML_TEMPLATE = """
             if (totalItems > 0) {
                 footer.classList.add('visible');
                 cartCount.textContent = totalItems;
-                cartTotal.textContent = totalPrice;
+                cartTotal.textContent = Math.round(totalPrice / 100) * 100;
             } else {
                 footer.classList.remove('visible');
             }
