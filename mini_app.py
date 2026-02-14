@@ -1737,11 +1737,20 @@ HTML_TEMPLATE = """
             const categoriesContainer = document.getElementById('categoriesTabs');
             categoriesContainer.innerHTML = '';
 
-            // Получаем уникальные категории
-            const categories = [...new Set(products.map(p => p.category).filter(c => c))];
+            // Получаем уникальные категории (отфильтровываем пустые)
+            const categories = [...new Set(products.map(p => p.category).filter(c => c && c.trim()))];
 
-            // Если нет категорий, не показываем вкладки
-            if (categories.length === 0) return;
+            // Если нет товаров, не показываем вкладки
+            if (products.length === 0) return;
+
+            // Если категорий нет, показываем только "Все"
+            if (categories.length === 0) {
+                const allTab = document.createElement('button');
+                allTab.className = 'category-tab active';
+                allTab.textContent = 'Все';
+                categoriesContainer.appendChild(allTab);
+                return;
+            }
 
             // Добавляем вкладку "Все"
             const allTab = document.createElement('button');
