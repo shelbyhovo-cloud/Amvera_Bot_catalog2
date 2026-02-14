@@ -369,14 +369,16 @@ def load_products_from_excel(file_path=None):
             local_images = ws.cell(row_num, 8).value      # H: Локальное фото
             sizes = ws.cell(row_num, 9).value             # I: Размеры
 
-            # Берём ТОЛЬКО "Цена с дост. (₽)" из столбца P (может быть формула или значение)
+            # Берём "Цена с дост. (₽)" из столбца P, фоллбэк на C (€)
             price_with_delivery = ws.cell(row_num, 16).value  # P: Цена с дост. (₽)
+            price_eur = ws.cell(row_num, 3).value              # C: Цена (€)
 
-            # Используем только цену с доставкой
+            price = None
             if price_with_delivery and isinstance(price_with_delivery, (int, float)) and price_with_delivery > 0:
                 price = int(price_with_delivery)
-            else:
-                price = None
+            elif price_eur and isinstance(price_eur, (int, float)) and price_eur > 0:
+                # Фоллбэк: цена в евро (формулы ещё не рассчитаны Excel'ом)
+                price = int(price_eur)
 
             # Пропускаем строки без данных
             if not name or not price:
