@@ -384,21 +384,13 @@ def clean_product_name(name):
 
 
 def download_image(image_url, save_dir, product_id):
-    """Скачивает изображение и сохраняет локально (с проверкой существования)."""
+    """Скачивает изображение и сохраняет локально (всегда перезаписывает)."""
     try:
-        # Генерируем имя файла заранее (используем hash URL для уникальности)
-        url_hash = hash(image_url) % 10000
+        # Удаляем старые файлы для этого product_id (если есть)
+        for old_file in save_dir.glob(f"product_{product_id}.*"):
+            old_file.unlink()
 
-        # Пробуем найти существующий файл с таким хешем (любое расширение)
-        for ext in ['.jpg', '.png', '.webp', '.jpeg']:
-            filename = f"product_{product_id}_{url_hash}{ext}"
-            filepath = save_dir / filename
-
-            # Если файл уже существует - пропускаем скачивание
-            if filepath.exists():
-                return str(filepath.relative_to(save_dir.parent))
-
-        # Если файла нет - скачиваем
+        # Скачиваем изображение
         response = requests.get(image_url, timeout=10, stream=True)
         response.raise_for_status()
 
@@ -412,11 +404,11 @@ def download_image(image_url, save_dir, product_id):
         elif 'jpeg' in content_type or 'jpg' in content_type:
             ext = '.jpg'
 
-        # Генерируем имя файла
-        filename = f"product_{product_id}_{url_hash}{ext}"
+        # Генерируем имя файла: product_1.webp, product_2.jpg и т.д.
+        filename = f"product_{product_id}{ext}"
         filepath = save_dir / filename
 
-        # Сохраняем файл
+        # Сохраняем файл (перезаписываем если существует)
         with open(filepath, 'wb') as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
